@@ -3,8 +3,8 @@
     "description": "A simple action activity log package for Laravel.",
     "type": "library",
     "require": {
-        "php": "^8.2",
-        "illuminate/support": "^11.0"
+        "php": ">=8.2",
+        "illuminate/support": ">=11.0"
     },
     "license": "MIT",
     "autoload": {
