@@ -10,7 +10,7 @@ A lightweight and extensible Laravel package for logging application activity. I
 Add this package to your Laravel project via Composer:
 
 ```bash
-composer require alif/activity-log
+composer require alifcoder/activity-log
 ```
 
 > If your package is not on Packagist, add a repository to your `composer.json`:
@@ -19,7 +19,7 @@ composer require alif/activity-log
 > "repositories": [
 >   {
 >     "type": "vcs",
->     "url": "https://github.com/alif/activity-log"
+>     "url": "https://github.com/alifcoder/activity-log"
 >   }
 > ],
 > ```
@@ -53,7 +53,7 @@ return [
 To create the activity logs table, run:
 
 ```bash
-php artisan migrate --path=vendor/alif/activity-log/database/migrations
+php artisan migrate --path=vendor/alifcoder/activity-log/database/migrations
 ```
 
 > ⚠️ Make sure your logging database has a `migrations` table or create one manually if needed.

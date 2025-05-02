@@ -1,19 +1,19 @@
 <?php return array(
     'root' => array(
-        'name' => 'alif/activity_log',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'name' => 'alifcoder/activity-log',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => 'c411353ff30f816f4b48d4fbb2c9ce4effab4920',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
-        'alif/activity_log' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+        'alifcoder/activity-log' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'c411353ff30f816f4b48d4fbb2c9ce4effab4920',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -446,9 +446,9 @@
             ),
         ),
         'nesbot/carbon' => array(
-            'pretty_version' => '3.9.0',
-            'version' => '3.9.0.0',
-            'reference' => '6d16a8a015166fe54e22c042e0805c5363aef50d',
+            'pretty_version' => '3.9.1',
+            'version' => '3.9.1.0',
+            'reference' => 'ced71f79398ece168e24f7f7710462f462310d4d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../nesbot/carbon',
             'aliases' => array(),
