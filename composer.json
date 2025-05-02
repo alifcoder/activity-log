@@ -1,0 +1,34 @@
+{
+    "name": "alif/activity-log",
+    "description": "A simple action activity log package for Laravel.",
+    "type": "library",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Alif\\ActivityLog\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alif\\ActivityLog\\ActivityLogServiceProvider"
+            ],
+            "aliases": {
+                "ActivityLogger": "Alif\\ActivityLog\\Facades\\ActivityLogger"
+            }
+        }
+    },
+    "authors": [
+        {
+            "name": "Shukhratjon Yuldashev",
+            "email": "uzalifcoder@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "laravel/framework": "^11.44"
+    }
+}
