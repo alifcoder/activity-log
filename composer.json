@@ -1,5 +1,5 @@
 {
-    "name": "alif/activity-log",
+    "name": "alifcoder/activity-log",
     "description": "A simple action activity log package for Laravel.",
     "type": "library",
     "require": {
