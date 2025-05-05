@@ -3,7 +3,7 @@
         'name' => 'alifcoder/activity-log',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'c411353ff30f816f4b48d4fbb2c9ce4effab4920',
+        'reference' => 'c71f53fe1adcdbe08bf4cbef5e34f931c0261c67',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'alifcoder/activity-log' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'c411353ff30f816f4b48d4fbb2c9ce4effab4920',
+            'reference' => 'c71f53fe1adcdbe08bf4cbef5e34f931c0261c67',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
