@@ -1,174 +1,169 @@
+# 📘 Alif Activity Log
 
-# Laravel Activity Log
-
-A lightweight and extensible Laravel package for logging application activity. It captures and stores HTTP requests, responses, and model changes, with support for middleware logging, Guzzle macros, and customizable database connections.
+A simple, customizable Laravel package to log and store user activity across your application. Perfect for auditing, tracking changes, and monitoring actions within modules.
 
 ---
 
-## 📦 Installation
+## ✨ Features
 
-Add this package to your Laravel project via Composer:
+- Logs authenticated user actions and request details
+- Stores activity in a dedicated `activity_logs` table
+- Supports parent-child log relationships
+- Customizable logging behavior
+- Easily extendable and minimalistic
+
+---
+
+## 📦 Requirements
+
+- **PHP** `>=8.2`
+- **Laravel** `^11.0 || ^12.0`
+
+---
+
+## 🚀 Installation
 
 ```bash
 composer require alifcoder/activity-log
 ```
 
-> If your package is not on Packagist, add a repository to your `composer.json`:
->
-> ```json
-> "repositories": [
->   {
->     "type": "vcs",
->     "url": "https://github.com/alifcoder/activity-log"
->   }
-> ],
-> ```
+---
+
+## ⚙️ Configuration & Migration
+
+Publish the configuration and migration with:
+
+```bash
+php artisan vendor:publish --tag=activity-log
+```
+
+This will publish:
+- `config/activity-log.php`
+- `database/migrations/xxxx_xx_xx_xxxxxx_create_activity_logs_table.php`
+
+Then run the migration:
+
+```bash
+php artisan migrate
+```
 
 ---
 
-## 🛠 Configuration
+## 🧑‍💻 Usage
 
-1. **Publish the config file (optional):**
-
-```bash
-php artisan vendor:publish --tag=activity-log-config
-```
-
-2. **Configure the connection (optional):**
-
-In `config/activity-log.php`:
+### Logging a manual activity
 
 ```php
-return [
-    'connection' => env('ACTIVITY_LOG_DB_CONNECTION', env('DB_CONNECTION')),
-];
-```
 
-> You can define a separate database for logging activities.
+
+ActivityLogger::log(new ActivityLogCreateDTO(
+                log_type: 'custom',         // optional: log type
+                user_id: 1,                 // optional: user_id
+                url: 'http://example.com',  // optional: URL
+                method: 'GET',              // optional: HTTP method
+                request_body: '{}',         // optional: request body
+                response_body: '{}',        // optional: response body
+                ...                         // other parameters
+        ));
+```
 
 ---
 
-## 🧬 Migrations
+## 🧱 Table Structure: `activity_logs`
 
-To create the activity logs table, run:
+| Column       | Type    | Description                      |
+|--------------|---------|----------------------------------|
+| `id`         | UUID    | Primary key                      |
+| `parent_id`  | UUID    | Link to parent log (optional)    |
+| `log_type`   | String  | Type of action (e.g. create)     |
+| `user_id`    | String  | Authenticated user ID            |
+| `module`     | String  | App module or context            |
+| `route`      | String  | Route name                       |
+| `url`        | String  | Full URL accessed                |
+| `model_id`   | String  | Related model ID (optional)      |
+| `model_type` | String  | Related model class (optional)   |
+| `user_agent` | Text    | Browser/user-agent string        |
+| `created_at` | DateTime| When the log was created         |
+
+---
+
+## 🧹 Uninstall (Clean Up)
+
+Run this command before removing the package:
 
 ```bash
-php artisan migrate --path=vendor/alifcoder/activity-log/database/migrations
+php artisan activity-log:uninstall
 ```
 
-> ⚠️ Make sure your logging database has a `migrations` table or create one manually if needed.
+It will:
+- Roll back the migration (calls `down()`)
+- Delete related migration files
+- Remove the config file
+
+Then remove the package:
+
+```bash
+composer remove alifcoder/activity-log
+```
 
 ---
 
-## 🌐 Middleware Logging
+## 🤝 Contributing
 
-The package provides a global middleware to log:
+Pull requests are welcome! For major changes, please open an issue first.
 
-- All `POST` and `PUT` requests
-- Payloads and responses
-- Auto-generated request tracking ID
+---
 
-Register the middleware globally in your `App\Http\Kernel.php`:
+## 🪪 License
+
+MIT License © [Shukhratjon Yuldashev](https://t.me/alif_coder)
+
+
+---
+
+## 📡 Automatic Logging for All Requests
+
+To log **every request** made to your Laravel application, you can use the provided middleware and HTTP macro.
+
+### ✅ 1. Register the Middleware
+
+In your `app/Http/Kernel.php`, register the middleware globally or per group:
 
 ```php
 protected $middleware = [
-    \ShukhratjonYuldashev\ActivityLog\Http\Middleware\LogActivityMiddleware::class,
+    // ...
+    \Alif\ActivityLog\Http\Middleware\ActivityLogMiddleware::class,
 ];
 ```
 
----
+This will automatically log incoming HTTP requests, including route, URL, method, and user info.
 
-## 🧱 Model Events Tracking
+### ✅ 2. Log Outgoing HTTP Requests
 
-This package logs `created` and `updated` events on models. In your model:
+The package extends Laravel’s `Http` client with a `loggable()` macro.
 
-```php
-use ShukhratjonYuldashev\ActivityLog\Traits\LogsActivity;
-
-class Post extends Model
-{
-    use LogsActivity;
-
-    // Optional: Customize logged attributes or model name
-}
-```
-
-The middleware passes a unique request ID, so the model events can be linked to the original HTTP request.
-
----
-
-## 🌍 HTTP Client Logging (Guzzle)
-
-To log outgoing requests (using Laravel's `Http` facade), register the macro:
+Example usage:
 
 ```php
-Http::macro('loggable', function () {
-    return Http::withMiddleware(function ($handler) {
-        return function ($request, array $options) use ($handler) {
-            \Log::info('Outgoing Request cURL: ' . \ShukhratjonYuldashev\ActivityLog\Helpers\CurlGenerator::generateCurl($request));
-            return $handler($request, $options);
-        };
-    });
-});
+use Illuminate\Support\Facades\Http;
+
+$response = Http::loggable()->get('https://example.com/api/data');
 ```
 
-Then use it like this:
+This logs outgoing HTTP calls made by your application.
 
-```php
-$response = Http::loggable()->post('https://example.com/api', [
-    'name' => 'Test'
-]);
+---
+
+## 🧩 Customization
+
+You can customize what gets logged, ignored routes/methods, and the database connection via:
+
+```
+config/activity-log.php
 ```
 
 ---
 
-## ⚙️ Async Logging with Jobs
+## 📫 Support
 
-Activity entries are queued using Laravel’s `dispatch()` system. Make sure you have a queue worker running:
-
-```bash
-php artisan queue:work
-```
-
----
-
-## 📁 Directory Structure
-
-```
-src/
-├── ActivityLogServiceProvider.php
-├── Http/
-│   └── Middleware/LogActivityMiddleware.php
-├── Jobs/StoreActivityLog.php
-├── Models/ActivityLog.php
-├── Traits/LogsActivity.php
-├── Helpers/CurlGenerator.php
-config/
-└── activity-log.php
-database/
-└── migrations/xxxx_xx_xx_create_activity_logs_table.php
-```
-
----
-
-## 🏷 Versioning
-
-Tag your releases in Git:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
----
-
-## 📄 License
-
-This package is open-sourced software licensed under the [MIT license](LICENSE).
-
----
-
-## 🧑‍💻 Author
-
-**Shukhratjon Yuldashev**  
-GitHub: [@alifcoder](https://github.com/alifcoder)
+If you need help, feel free to contact [Shukhratjon Yuldashev on Telegram](https://t.me/alif_coder).
