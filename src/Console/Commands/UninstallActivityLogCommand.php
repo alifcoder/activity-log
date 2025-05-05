@@ -38,26 +38,31 @@ class UninstallActivityLogCommand extends Command
 
     public function rollbackMigrations(): void
     {
-        // Delete published migrations by calling down() first
         $migrations = collect(glob(database_path('migrations/*activity_log*.php')))
                 ->sortDesc(); // Sort by newest first
 
         foreach ($migrations as $migrationPath) {
             require_once $migrationPath;
 
-            // Try to find the class name in the file
-            $className = collect(get_declared_classes())->last();
+            $className = null;
+            $contents  = file_get_contents($migrationPath);
+            if (preg_match('/class\s+([^\s]+)/', $contents, $matches)) {
+                $className = $matches[1];
+            }
 
-            if (class_exists($className)) {
-                $migrationInstance = new $className;
+            if ($className && class_exists($className)) {
+                $reflection = new \ReflectionClass($className);
 
-                // Only call down() if the method exists
-                if (method_exists($migrationInstance, 'down')) {
-                    try {
-                        $migrationInstance->down();
-                        $this->info("🔧 Rolled back: {$className}");
-                    } catch (\Throwable $e) {
-                        $this->error("❌ Failed to run down() for {$className}: {$e->getMessage()}");
+                if (!$reflection->isAbstract()) {
+                    $migrationInstance = new $className;
+
+                    if (method_exists($migrationInstance, 'down')) {
+                        try {
+                            $migrationInstance->down();
+                            $this->info("🔧 Rolled back: {$className}");
+                        } catch (\Throwable $e) {
+                            $this->error("❌ Failed to run down() for {$className}: {$e->getMessage()}");
+                        }
                     }
                 }
             }
@@ -67,4 +72,5 @@ class UninstallActivityLogCommand extends Command
             $this->info("⚠️ Deleted migration: {$migrationPath}");
         }
     }
+
 }
