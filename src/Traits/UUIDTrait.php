@@ -11,7 +11,7 @@ use Ramsey\Uuid\Uuid;
 
 trait UUIDTrait
 {
-    protected static function bootUuids(): void
+    protected static function bootUUIDTrait(): void
     {
         static::creating(function (self $model) {
             if (empty($model->{$model->getKeyName()})) {
