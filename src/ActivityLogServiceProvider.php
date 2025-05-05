@@ -7,6 +7,7 @@
 
 namespace Alif\ActivityLog;
 
+use Alif\ActivityLog\Console\Commands\UninstallActivityLogCommand;
 use Alif\ActivityLog\Macros\HttpMacro;
 use Alif\ActivityLog\Middleware\LogActivity;
 use Alif\ActivityLog\Services\ActivityLogService;
@@ -25,6 +26,13 @@ class ActivityLogServiceProvider extends ServiceProvider
         // Merge the configuration file
         $this->mergeConfigFrom(__DIR__ . '/../config/activity-log.php', 'activity-log');
 
+        // Register the console commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                                    UninstallActivityLogCommand::class,
+                            ]);
+        }
+
         // Register the service
         $this->app->bind(ActivityLogServiceInterface::class, ActivityLogService::class);
     }
@@ -34,14 +42,11 @@ class ActivityLogServiceProvider extends ServiceProvider
         // Register the macro
         HttpMacro::register();
 
-        // Load migrations
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-
         // Allow publishing
         $this->publishes(
                 [
                         (__DIR__ . '/../config/activity-log.php') => config_path('activity-log.php'),
-                                                            (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/' . date('Y_m_d_His', time()) . '_create_activity_logs_table.php'),
+                                                               (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/' . date('Y_m_d_His', time()) . '_create_activity_logs_table.php'),
                 ], 'activity-log');
 
         // Register global middleware
