@@ -22,6 +22,8 @@ class ActivityLog extends Model
 
     protected $table = 'activity_logs';
 
+    protected $guarded = false;
+
     public function getConnectionName()
     {
         return config('activity-log.db_connection');

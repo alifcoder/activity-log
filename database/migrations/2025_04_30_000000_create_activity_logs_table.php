@@ -15,6 +15,7 @@ return new class extends Migration {
         Schema::connection(config('activity-log.db_connection'))->create('activity_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('parent_id')->nullable()->index();
+            $table->string('additional_id')->nullable()->index();
             $table->string('log_type')->nullable()->index();
             $table->string('user_id')->nullable()->index();
             $table->string('module')->nullable()->index();
