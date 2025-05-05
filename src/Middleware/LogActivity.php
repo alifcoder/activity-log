@@ -60,6 +60,6 @@ class LogActivity
         ActivityLogger::log($dto);
 
         // return the response
-        return $next($request);
+        return $response;
     }
 }
