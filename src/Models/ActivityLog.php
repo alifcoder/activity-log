@@ -34,4 +34,9 @@ class ActivityLog extends Model
     {
         return $this->belongsTo(ActivityLog::class, 'parent_id');
     }
+
+    public function child(): BelongsTo
+    {
+        return $this->belongsTo(ActivityLog::class, 'child_id');
+    }
 }
