@@ -28,7 +28,6 @@ return new class extends Migration {
             $table->string('ip')->nullable()->index();
             $table->string('method')->nullable()->index();
             $table->string('status_code')->nullable()->index();
-            $table->string('ip')->nullable()->index();
             $table->json('request_body')->nullable();
             $table->json('response_body')->nullable();
             $table->text('curl')->nullable();
