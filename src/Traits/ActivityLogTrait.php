@@ -16,14 +16,15 @@ trait ActivityLogTrait
     {
         // log model creation
         static::created(function ($model) {
+            $request = request();
             // check request is valid
-            if (!\Request::has('activity_log_id')) {
+            if (!$request->attributes->has('activity_log_id')) {
                 return;
             }
 
             // get activity_log_id attribute from request and update log
             ActivityLogger::log(new ActivityLogCreateDTO(
-                                        additional_id: \Request::get('activity_log_id'),
+                                        additional_id: $request->attributes->get('activity_log_id'),
                                         model_id:      $model->id,
                                         model_type:    get_class($model)
                                 ));
@@ -31,14 +32,15 @@ trait ActivityLogTrait
 
         // log model update
         static::updated(function ($model) {
+            $request = request();
             // check request is valid
-            if (!\Request::has('activity_log_id')) {
+            if (!$request->attributes->has('activity_log_id')) {
                 return;
             }
 
             // get activity_log_id attribute from request and update log
             ActivityLogger::log(new ActivityLogCreateDTO(
-                                        additional_id: \Request::get('activity_log_id'),
+                                        additional_id: $request->attributes->get('activity_log_id'),
                                         model_id:      $model->id,
                                         model_type:    get_class($model)
                                 ));
