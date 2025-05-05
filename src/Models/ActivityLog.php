@@ -10,6 +10,7 @@ namespace Alif\ActivityLog\Models;
 use Alif\ActivityLog\Traits\UUIDTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ActivityLog extends Model
 {
@@ -35,8 +36,8 @@ class ActivityLog extends Model
         return $this->belongsTo(ActivityLog::class, 'parent_id');
     }
 
-    public function child(): BelongsTo
+    public function child(): HasOne
     {
-        return $this->belongsTo(ActivityLog::class, 'child_id');
+        return $this->hasOne(ActivityLog::class, 'parent_id', 'id');
     }
 }
