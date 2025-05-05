@@ -90,7 +90,8 @@ class ActivityLogService implements ActivityLogServiceInterface
         }
 
         if (!empty($body)) {
-            $escapedBody = addslashes($body);
+            // Escape single quotes only, since we wrap the body in single quotes
+            $escapedBody = str_replace("'", "'\"'\"'", $body);
             $curl        .= " --data '{$escapedBody}'";
         }
 
