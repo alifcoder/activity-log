@@ -2,7 +2,7 @@
 /**
  * Created by Shukhratjon Yuldashev on 2025-05-05
  * Contact: https://t.me/alif_coder
- * Time: 2:46 PM
+ * Time: 2:46 PM
  */
 
 namespace Alif\ActivityLog\Console\Commands;
@@ -23,7 +23,7 @@ class UninstallActivityLogCommand extends Command
         // Delete published migrations
         $this->rollbackMigrations();
 
-        $this->info('✅ Activity Log package uninstalled successfully.');
+        $this->info('✅  Activity Log package uninstalled successfully.');
     }
 
     public function rollbackConfig(): void
@@ -42,28 +42,14 @@ class UninstallActivityLogCommand extends Command
                 ->sortDesc(); // Sort by newest first
 
         foreach ($migrations as $migrationPath) {
-            require_once $migrationPath;
+            $migrationInstance = require $migrationPath;
 
-            $className = null;
-            $contents  = file_get_contents($migrationPath);
-            if (preg_match('/class\s+([^\s]+)/', $contents, $matches)) {
-                $className = $matches[1];
-            }
-
-            if ($className && class_exists($className)) {
-                $reflection = new \ReflectionClass($className);
-
-                if (!$reflection->isAbstract()) {
-                    $migrationInstance = new $className;
-
-                    if (method_exists($migrationInstance, 'down')) {
-                        try {
-                            $migrationInstance->down();
-                            $this->info("🔧 Rolled back: {$className}");
-                        } catch (\Throwable $e) {
-                            $this->error("❌ Failed to run down() for {$className}: {$e->getMessage()}");
-                        }
-                    }
+            if (method_exists($migrationInstance, 'down')) {
+                try {
+                    $migrationInstance->down();
+                    $this->info("🔧 Rolled back anonymous migration in: {$migrationPath}");
+                } catch (\Throwable $e) {
+                    $this->error("❌ Failed to rollback anonymous migration: {$e->getMessage()}");
                 }
             }
 
