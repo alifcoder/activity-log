@@ -12,6 +12,7 @@ use Alif\ActivityLog\Jobs\StoreActivityLogJob;
 use Alif\ActivityLog\Models\ActivityLog;
 use Alif\ActivityLog\Services\Interface\ActivityLogServiceInterface;
 use Illuminate\Http\Request as LaravelRequest;
+use Illuminate\Http\UploadedFile;
 use Psr\Http\Message\RequestInterface as PsrRequest;
 
 class ActivityLogService implements ActivityLogServiceInterface
@@ -105,11 +106,16 @@ class ActivityLogService implements ActivityLogServiceInterface
         if (str_contains($request->header('Content-Type'), 'multipart/form-data')) {
             // Only log form fields, not files
             $payload['fields'] = $request->except(array_keys($request->files->all()));
-            $payload['files']  = collect($request->files)->map(fn($file) => [
-                    'name' => $file->getClientOriginalName(),
-                    'mime' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-            ]);
+            $payload['files']  = collect($request->files)->map(function ($file) {
+                $file = $file['file'] ?? null; // Handle the case where file is wrapped in an array
+
+                /** @var ?UploadedFile $file */
+                return [
+                        'name' => $file?->getClientOriginalName(),
+                        'mime' => $file?->getMimeType(),
+                        'size' => $file?->getSize(),
+                ];
+            })->toArray();
         } else {
             // Safe for application/json or x-www-form-urlencoded
             $payload = $request->all();

@@ -46,7 +46,7 @@ class ActivityLogServiceProvider extends ServiceProvider
         $this->publishes(
                 [
                         (__DIR__ . '/../config/activity-log.php') => config_path('activity-log.php'),
-                                                               (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/' . date('Y_m_d_His', time()) . '_create_activity_logs_table.php'),
+                        (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/' . date('Y_m_d_His', time()) . '_create_activity_logs_table.php'),
                 ], 'activity-log');
 
         // Register global middleware
