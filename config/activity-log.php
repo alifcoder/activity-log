@@ -11,5 +11,8 @@ return [
         'use_queue'  => true,
         'queue_name' => 'default',
 
-
+        'main_connection' => env('MAIN_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
+        'models' => [
+                'user' => App\Models\User::class,
+        ],
 ];
