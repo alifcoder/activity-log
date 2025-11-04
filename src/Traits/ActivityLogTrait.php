@@ -31,7 +31,7 @@ trait ActivityLogTrait
         });
 
         // log model update
-        static::updated(function ($model) {
+        static::saving(function ($model) {
             $request = request();
             // check request is valid
             if (!$request->attributes->has('activity_log_id')) {
@@ -39,6 +39,20 @@ trait ActivityLogTrait
             }
 
             // get activity_log_id attribute from request and update log
+            ActivityLogger::log(new ActivityLogCreateDTO(
+                                        additional_id: $request->attributes->get('activity_log_id'),
+                                        model_id:      $model->id,
+                                        model_type:    get_class($model)
+                                ));
+        });
+
+        static::deleting(function ($model) {
+            $request = request();
+
+            if (!$request->attributes->has('activity_log_id')) {
+                return;
+            }
+
             ActivityLogger::log(new ActivityLogCreateDTO(
                                         additional_id: $request->attributes->get('activity_log_id'),
                                         model_id:      $model->id,
