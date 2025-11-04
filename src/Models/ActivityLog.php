@@ -40,4 +40,9 @@ class ActivityLog extends Model
     {
         return $this->hasOne(ActivityLog::class, 'parent_id', 'id');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->setConnection(config('activity-log.main_connection'))->belongsTo(config('activity-log.models.user'), 'user_id');
+    }
 }
