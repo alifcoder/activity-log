@@ -28,6 +28,9 @@ class LogActivity
         // get the module name from the action name
         $module_name = explode("\\", $action_name)[1] ?? null;
 
+        // get the current microtime for logging request-response time
+        $start_time = microtime(true);
+
         // get response from the next middleware
         $response = $next($request);
 
@@ -35,6 +38,13 @@ class LogActivity
         $_payload  = ActivityLogger::getPayloadOfRequest($request);
         $_response = json_decode($response->getContent(), true);
         $_curl     = ActivityLogger::curlOfRequest($request);
+
+        // calculate the time taken for the request-response cycle
+        $end_time   = microtime(true);
+        $duration = ($end_time - $start_time) * 1000; // in milliseconds
+
+        // calculate the peak memory used during the request-response cycle
+        $peak_memory_used = memory_get_peak_usage(true); // in bytes
 
         // create a DTO for the activity log
         $dto = new ActivityLogCreateDTO(
@@ -54,6 +64,8 @@ class LogActivity
                 response_body: $_response,
                 curl:          $_curl,
                 description:   "Middleware log",
+                request_duration:   $duration,
+                peak_memory_usage:   $peak_memory_used,
         );
 
         // log the activity

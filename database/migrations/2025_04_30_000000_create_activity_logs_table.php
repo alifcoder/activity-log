@@ -33,6 +33,9 @@ return new class extends Migration {
             $table->json('response_body')->nullable();
             $table->text('curl')->nullable();
             $table->text('description')->nullable()->index();
+            $table->decimal('request_duration', 10, 3)->nullable()->index();
+            $table->bigInteger('peak_memory_usage')->nullable()->index();
+            $table->json('ip_details')->nullable();
             $table->timestamps();
         });
     }

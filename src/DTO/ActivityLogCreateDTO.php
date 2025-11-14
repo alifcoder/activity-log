@@ -28,6 +28,8 @@ class ActivityLogCreateDTO
             public ?array $response_body = null,
             public ?string $curl = null,
             public ?string $description = null,
+            public ?float $request_duration = null,
+            public ?int $peak_memory_usage = null,
     ) {
     }
 

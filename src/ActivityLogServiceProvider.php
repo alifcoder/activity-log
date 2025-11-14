@@ -8,6 +8,7 @@
 namespace Alif\ActivityLog;
 
 use Alif\ActivityLog\Console\Commands\UninstallActivityLogCommand;
+use Alif\ActivityLog\Console\SyncIpDetailsCommand;
 use Alif\ActivityLog\Macros\HttpMacro;
 use Alif\ActivityLog\Middleware\LogActivity;
 use Alif\ActivityLog\Services\ActivityLogService;
@@ -30,6 +31,7 @@ class ActivityLogServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                                     UninstallActivityLogCommand::class,
+                                    SyncIpDetailsCommand::class,
                             ]);
         }
 
@@ -51,5 +53,13 @@ class ActivityLogServiceProvider extends ServiceProvider
 
         // Register global middleware
         $kernel->pushMiddleware(LogActivity::class);
+
+        // Schedule the IP details sync command
+        $this->app->booted(function () {
+            $schedule = app(\Illuminate\Console\Scheduling\Schedule::class);
+
+            // Run daily at 00:00
+            $schedule->command('activity-log:sync-ip-details')->daily();
+        });
     }
 }
