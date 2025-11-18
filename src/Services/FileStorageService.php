@@ -30,4 +30,12 @@ class FileStorageService implements FileStorageServiceInterface
 
         return Encryption::decrypt(Storage::get($path));
     }
+
+    public function deleteEncrypted(string $path): bool
+    {
+        if (Storage::exists($path)) {
+            return Storage::delete($path);
+        }
+        return false;
+    }
 }

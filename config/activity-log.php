@@ -16,4 +16,5 @@ return [
                 'user' => App\Models\User::class,
         ],
         'encrypt_key' => env('ACTIVITY_LOG_ENCRYPT_KEY'),
+        'log_keep_days' => env('ACTIVITY_LOG_KEEP_DAYS', 30),
 ];

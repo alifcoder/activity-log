@@ -12,4 +12,6 @@ interface FileStorageServiceInterface
     public function storeEncrypted(string $content, string $fileName): string;
 
     public function readEncrypted(string $path): ?string;
+
+    public function deleteEncrypted(string $path): bool;
 }
