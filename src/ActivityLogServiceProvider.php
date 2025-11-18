@@ -8,11 +8,16 @@
 namespace Alif\ActivityLog;
 
 use Alif\ActivityLog\Console\Commands\UninstallActivityLogCommand;
+use Alif\ActivityLog\Console\GenerateKeyCommand;
 use Alif\ActivityLog\Console\SyncIpDetailsCommand;
 use Alif\ActivityLog\Macros\HttpMacro;
 use Alif\ActivityLog\Middleware\LogActivity;
 use Alif\ActivityLog\Services\ActivityLogService;
+use Alif\ActivityLog\Services\EncryptionService;
+use Alif\ActivityLog\Services\FileStorageService;
 use Alif\ActivityLog\Services\Interface\ActivityLogServiceInterface;
+use Alif\ActivityLog\Services\Interface\EncryptionServiceInterface;
+use Alif\ActivityLog\Services\Interface\FileStorageServiceInterface;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,11 +37,14 @@ class ActivityLogServiceProvider extends ServiceProvider
             $this->commands([
                                     UninstallActivityLogCommand::class,
                                     SyncIpDetailsCommand::class,
+                                    GenerateKeyCommand::class,
                             ]);
         }
 
         // Register the service
         $this->app->bind(ActivityLogServiceInterface::class, ActivityLogService::class);
+        $this->app->bind(EncryptionServiceInterface::class, EncryptionService::class);
+        $this->app->bind(FileStorageServiceInterface::class, FileStorageService::class);
     }
 
     public function boot(Kernel $kernel): void
@@ -48,7 +56,7 @@ class ActivityLogServiceProvider extends ServiceProvider
         $this->publishes(
                 [
                         (__DIR__ . '/../config/activity-log.php') => config_path('activity-log.php'),
-                        (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/' . date('Y_m_d_His', time()) . '_create_activity_logs_table.php'),
+                        (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/2025_04_30_000000_create_activity_logs_table.php'),
                 ], 'activity-log');
 
         // Register global middleware
@@ -58,8 +66,8 @@ class ActivityLogServiceProvider extends ServiceProvider
         $this->app->booted(function () {
             $schedule = app(\Illuminate\Console\Scheduling\Schedule::class);
 
-            // Run daily at 00:00
-            $schedule->command('activity-log:sync-ip-details')->daily();
+            // Run hourly
+            $schedule->command('activity-log:sync-ip-details')->hourly();
         });
     }
 }

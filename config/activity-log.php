@@ -15,4 +15,5 @@ return [
         'models' => [
                 'user' => App\Models\User::class,
         ],
+        'encrypt_key' => env('ACTIVITY_LOG_ENCRYPT_KEY'),
 ];
