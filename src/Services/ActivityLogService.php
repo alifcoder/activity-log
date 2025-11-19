@@ -8,11 +8,13 @@
 namespace Alif\ActivityLog\Services;
 
 use Alif\ActivityLog\DTO\ActivityLogCreateDTO;
+use Alif\ActivityLog\Facades\FileStorage;
 use Alif\ActivityLog\Jobs\StoreActivityLogJob;
 use Alif\ActivityLog\Models\ActivityLog;
 use Alif\ActivityLog\Services\Interface\ActivityLogServiceInterface;
 use Illuminate\Http\Request as LaravelRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface as PsrRequest;
 
 class ActivityLogService implements ActivityLogServiceInterface
@@ -32,6 +34,18 @@ class ActivityLogService implements ActivityLogServiceInterface
 
     public function updateOrCreate(ActivityLogCreateDTO $dto): void
     {
+        if ($dto->request_body){
+            $dto->request_body = FileStorage::storeEncrypted(json_encode($dto->request_body), 'request_' . Str::uuid());
+        }
+
+        if ($dto->response_body){
+            $dto->response_body = FileStorage::storeEncrypted(json_encode($dto->response_body), 'response_' . Str::uuid());
+        }
+
+        if ($dto->curl){
+            $dto->curl = FileStorage::storeEncrypted($dto->curl, 'curl_' . Str::uuid());
+        }
+
         // update or create log in the database by additional_id
         $log = ActivityLog::updateOrCreate(
                 [
