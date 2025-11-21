@@ -34,6 +34,14 @@ class ActivityLogService implements ActivityLogServiceInterface
 
     public function updateOrCreate(ActivityLogCreateDTO $dto): void
     {
+        if (is_array($dto->request_body) && empty($dto->request_body)) {
+            $dto->request_body = null;
+        }
+
+        if (is_array($dto->response_body) && empty($dto->response_body)) {
+            $dto->response_body = null;
+        }
+
         if ($dto->request_body){
             $dto->request_body = FileStorage::storeEncrypted(json_encode($dto->request_body), 'request_' . Str::uuid());
         }
