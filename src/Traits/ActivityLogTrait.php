@@ -29,7 +29,7 @@ trait ActivityLogTrait
                 ->where('additional_id', $additionalId)
                 ->whereNotNull('model_id')
                 ->whereNotNull('model_type')
-                ->first();
+                ->exists();
 
             if ($existedActivityLog) {
                 return;
@@ -57,7 +57,7 @@ trait ActivityLogTrait
                 ->where('additional_id', $additionalId)
                 ->whereNotNull('model_id')
                 ->whereNotNull('model_type')
-                ->first();
+                ->exists();
 
             if ($existedActivityLog) {
                 return;
@@ -83,7 +83,7 @@ trait ActivityLogTrait
                 ->where('additional_id', $additionalId)
                 ->whereNotNull('model_id')
                 ->whereNotNull('model_type')
-                ->first();
+                ->exists();
 
             if ($existedActivityLog) {
                 return;
