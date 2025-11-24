@@ -67,6 +67,69 @@ ActivityLogger::log(new ActivityLogCreateDTO(
         ));
 ```
 
+## 🔀 Logging for Specific Routes
+
+If you want the activity logger to run **only for selected routes**, you may attach the middleware manually:
+
+```php
+Route::post('/example', ExampleController::class)->middleware('activity_log');
+```
+
+---
+
+## 🔐 Encrypted Request & Response Storage
+
+All logged request and response bodies are stored as **encrypted files** for maximum data protection.
+
+To read an encrypted stored file:
+
+```php
+use Alif\ActivityLog\Facades\FileStorage;
+
+$content = FileStorage::readEncrypted($this->request_body);
+```
+---
+## 🔑 Generating an Encryption Secret Key
+
+Since request/response data is encrypted, the package requires a secret key.
+
+Generate it using:
+
+```bash
+php artisan activity-log:generate-key
+```
+
+---
+## 🌍 IP Address Details Sync
+
+The package supports collecting additional information about user IP addresses, such as:
+
+- Country
+- City
+- Coordinates
+- ISP
+- ASN
+- and more
+
+After installation, the package automatically registers a scheduled task:
+
+```bash
+php artisan activity-log:sync-ip-details
+```
+---
+
+## 🧹 Pruning Old Logs
+
+To automatically delete old or unnecessary logs, the package provides pruning support.
+
+Add the following to your application's scheduler:
+
+```php
+$schedule->command('model:prune', [
+    '--model' => [Alif\ActivityLog\Models\ActivityLog::class],
+])->daily();
+```
+
 ---
 
 ## 🧱 Table Structure: `activity_logs`
