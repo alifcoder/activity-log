@@ -45,6 +45,10 @@ trait ActivityLogTrait
 
         // log model update
         static::saving(function ($model) {
+            if (!$model->id){
+                return;
+            }
+
             $request = request();
             $additionalId = $request->attributes->get('activity_log_id');
             // check request is valid
