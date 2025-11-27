@@ -19,8 +19,6 @@ use Psr\Http\Message\RequestInterface as PsrRequest;
 
 class ActivityLogService implements ActivityLogServiceInterface
 {
-
-
     public function log(ActivityLogCreateDTO $dto): void
     {
         // check if the activity log should be stored in the queue
@@ -52,17 +50,6 @@ class ActivityLogService implements ActivityLogServiceInterface
 
         if ($dto->curl){
             $dto->curl = FileStorage::storeEncrypted($dto->curl, 'curl_' . Str::uuid());
-        }
-
-        // It is check to avoid duplicate logs on created event with another model
-        $existedActivityLog = ActivityLog::query()
-            ->where('additional_id', $dto->additional_id)
-            ->whereNotNull('model_id')
-            ->whereNotNull('model_type')
-            ->exists();
-
-        if ($existedActivityLog) {
-            return;
         }
 
         // update or create log in the database by additional_id

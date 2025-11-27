@@ -10,6 +10,7 @@ namespace Alif\ActivityLog\Traits;
 use Alif\ActivityLog\DTO\ActivityLogCreateDTO;
 use Alif\ActivityLog\Facades\ActivityLogger;
 use Alif\ActivityLog\Models\ActivityLog;
+use Illuminate\Support\Facades\Session;
 
 trait ActivityLogTrait
 {
@@ -20,20 +21,18 @@ trait ActivityLogTrait
             $request = request();
             $additionalId = $request->attributes->get('activity_log_id');
             // check request is valid
-            if (!$request->attributes->has('activity_log_id')) {
+            if (!$additionalId) {
                 return;
             }
 
-            // It is check to avoid duplicate logs on created event with another model
-            $existedActivityLog = ActivityLog::query()
-                ->where('additional_id', $additionalId)
-                ->whereNotNull('model_id')
-                ->whereNotNull('model_type')
-                ->exists();
+            // Prevent duplicate logging
+            $key = 'activity_logged_'.$additionalId;
 
-            if ($existedActivityLog) {
+            if ($request->attributes->has($key)) {
                 return;
             }
+
+            $request->attributes->set($key, true);
 
             // get activity_log_id attribute from request and update log
             ActivityLogger::log(new ActivityLogCreateDTO(
@@ -56,16 +55,14 @@ trait ActivityLogTrait
                 return;
             }
 
-            // It is check to avoid duplicate logs on created event with another model
-            $existedActivityLog = ActivityLog::query()
-                ->where('additional_id', $additionalId)
-                ->whereNotNull('model_id')
-                ->whereNotNull('model_type')
-                ->exists();
+            // Prevent duplicate logging
+            $key = 'activity_logged_'.$additionalId;
 
-            if ($existedActivityLog) {
+            if ($request->attributes->has($key)) {
                 return;
             }
+
+            $request->attributes->set($key, true);
 
             // get activity_log_id attribute from request and update log
             ActivityLogger::log(new ActivityLogCreateDTO(
@@ -82,16 +79,14 @@ trait ActivityLogTrait
                 return;
             }
 
-            // It is check to avoid duplicate logs on created event with another model
-            $existedActivityLog = ActivityLog::query()
-                ->where('additional_id', $additionalId)
-                ->whereNotNull('model_id')
-                ->whereNotNull('model_type')
-                ->exists();
+            // Prevent duplicate logging
+            $key = 'activity_logged_'.$additionalId;
 
-            if ($existedActivityLog) {
+            if ($request->attributes->has($key)) {
                 return;
             }
+
+            $request->attributes->set($key, true);
 
             ActivityLogger::log(new ActivityLogCreateDTO(
                                         additional_id: $additionalId,
