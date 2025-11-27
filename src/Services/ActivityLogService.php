@@ -25,7 +25,7 @@ class ActivityLogService implements ActivityLogServiceInterface
     {
         // check if the activity log should be stored in the queue
         if (config('activity-log.use_queue', true)) {
-            StoreActivityLogJob::dispatchAfterResponse($dto)->onQueue(config('activity-log.queue_name', 'default'));
+            StoreActivityLogJob::dispatch($dto)->onQueue(config('activity-log.queue_name', 'default'));
         } else {
             // Store the activity log immediately
             $this->updateOrCreate($dto);
@@ -52,6 +52,17 @@ class ActivityLogService implements ActivityLogServiceInterface
 
         if ($dto->curl){
             $dto->curl = FileStorage::storeEncrypted($dto->curl, 'curl_' . Str::uuid());
+        }
+
+        // It is check to avoid duplicate logs on created event with another model
+        $existedActivityLog = ActivityLog::query()
+            ->where('additional_id', $dto->additional_id)
+            ->whereNotNull('model_id')
+            ->whereNotNull('model_type')
+            ->exists();
+
+        if ($existedActivityLog) {
+            return;
         }
 
         // update or create log in the database by additional_id
