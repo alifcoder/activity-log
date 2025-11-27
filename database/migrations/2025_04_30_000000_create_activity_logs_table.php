@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->string('user_id')->nullable()->index();
             $table->string('module')->nullable()->index();
             $table->string('route', 500)->nullable()->index();
-            $table->string('url')->nullable()->index();
+            $table->text('url')->nullable()->index();
             $table->string('model_id')->nullable()->index();
             $table->string('model_type')->nullable()->index();
             $table->string('user_agent')->nullable()->index();
