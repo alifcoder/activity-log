@@ -16,9 +16,12 @@ class HttpMacro
 {
     public static function register(): void
     {
-        Http::macro('loggable', function (string $log_type = 'http') {
-            return Http::withMiddleware(function (callable $handler) use ($log_type) {
-                return function (RequestInterface $request, array $options) use ($handler, $log_type) {
+        Http::macro('loggable', function (string $log_type = 'http', string $description = 'Http log') {
+            return Http::withMiddleware(function (callable $handler) use ($log_type, $description) {
+                return function (RequestInterface $request, array $options) use ($handler, $log_type, $description) {
+                    // Start timing
+                    $start_time = microtime(true);
+
                     // Generate a unique request ID
                     $request_id   = (string)\Str::uuid();
                     $payloadArray = [];
@@ -39,7 +42,8 @@ class HttpMacro
                             url:           (string)$request->getUri(),
                             method:        $request->getMethod(),
                             request_body:  $payloadArray,
-                            curl:          ActivityLogger::curlOfRequest($request)
+                            curl:          ActivityLogger::curlOfRequest($request),
+                            description:   $description
                     );
 
                     // Log the request
@@ -47,7 +51,13 @@ class HttpMacro
 
                     // Make the actual request
                     return $handler($request, $options)->then(
-                            function ($response) use ($request, $request_id) {
+                            function ($response) use ($request, $request_id, $start_time) {
+                                // Duration
+                                $duration = (microtime(true) - $start_time) * 1000; // in milliseconds
+
+                                // Peak Memory
+                                $memory = memory_get_peak_usage(true);
+
                                 // Get the response body and content type
                                 $contentType   = $response->getHeaderLine('Content-Type');
                                 $response_body = [];
@@ -60,6 +70,8 @@ class HttpMacro
                                         additional_id: $request_id,
                                         status_code:   $response->getStatusCode(),
                                         response_body: $response_body,
+                                        request_duration:  $duration,
+                                        peak_memory_usage: $memory
                                 );
                                 // Update the activity log with the response
                                 ActivityLogger::log($dto);
