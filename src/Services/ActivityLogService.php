@@ -127,7 +127,9 @@ class ActivityLogService implements ActivityLogServiceInterface
             // Only log form fields, not files
             $payload['fields'] = $request->except(array_keys($request->files->all()));
             $payload['files']  = collect($request->files)->map(function ($file) {
-                $file = $file['file'] ?? null; // Handle the case where file is wrapped in an array
+                if(is_array($file)){
+                    $file = $file['file'] ?? null; // Handle the case where file is wrapped in an array
+                }
 
                 /** @var ?UploadedFile $file */
                 return [
