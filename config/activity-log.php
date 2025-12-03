@@ -17,4 +17,18 @@ return [
         ],
         'encrypt_key' => env('ACTIVITY_LOG_ENCRYPT_KEY'),
         'log_keep_days' => env('ACTIVITY_LOG_KEEP_DAYS', 30),
+        'ip_ignore' => [
+            // Full IPs
+            'exact' => [
+                '127.0.0.1',
+                'localhost',
+            ],
+
+            // Prefixes (with star(*))
+            'prefix' => [
+                '192.168.',
+                '10.',
+                '172.16.',
+            ],
+        ]
 ];

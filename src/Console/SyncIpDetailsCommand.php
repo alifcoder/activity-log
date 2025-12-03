@@ -35,6 +35,11 @@ class SyncIpDetailsCommand extends Command
             $this->info("Found {$ips->count()} IP(s) to update.\n");
 
             foreach ($ips as $ip) {
+                if ($this->shouldIgnoreIp($ip)) {
+                    $this->warn("⏭️ Ignored IP (config): {$ip}");
+                    continue;
+                }
+
                 $this->info("🌐 Updating IP: {$ip}");
 
                 // API Request with timeout + retry (safer)
@@ -70,5 +75,23 @@ class SyncIpDetailsCommand extends Command
             $this->error("💥 Error: " . $e->getMessage());
             return self::FAILURE;
         }
+    }
+
+    private function shouldIgnoreIp(string $ip): bool
+    {
+        $exact = config('activity-log.ip_ignore.exact', []);
+        $prefixes = config('activity-log.ip_ignore.prefix', []);
+
+        if (in_array($ip, $exact, true)) {
+            return true;
+        }
+
+        foreach ($prefixes as $prefix) {
+            if (str_starts_with($ip, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
