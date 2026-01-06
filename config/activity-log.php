@@ -11,24 +11,25 @@ return [
         'use_queue'  => true,
         'queue_name' => 'default',
 
-        'main_connection' => env('MAIN_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
-        'models' => [
+        'main_connection'   => env('MAIN_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
+        'models'            => [
                 'user' => App\Models\User::class,
         ],
-        'encrypt_key' => env('ACTIVITY_LOG_ENCRYPT_KEY'),
-        'log_keep_days' => env('ACTIVITY_LOG_KEEP_DAYS', 30),
-        'ip_ignore' => [
+        'file_storage_disk' => env('ACTIVITY_LOG_FILE_STORAGE_DISK', 'local'),
+        'encrypt_key'       => env('ACTIVITY_LOG_ENCRYPT_KEY'),
+        'log_keep_days'     => env('ACTIVITY_LOG_KEEP_DAYS', 30),
+        'ip_ignore'         => [
             // Full IPs
-            'exact' => [
-                '127.0.0.1',
-                'localhost',
+            'exact'  => [
+                    '127.0.0.1',
+                    'localhost',
             ],
 
             // Prefixes (with star(*))
             'prefix' => [
-                '192.168.',
-                '10.',
-                '172.16.',
+                    '192.168.',
+                    '10.',
+                    '172.16.',
             ],
-        ]
+        ],
 ];

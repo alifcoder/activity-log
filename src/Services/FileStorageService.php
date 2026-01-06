@@ -17,25 +17,26 @@ class FileStorageService implements FileStorageServiceInterface
     {
         $path = "activity-log/{$fileName}.log";
 
-        Storage::put($path, Encryption::encrypt($content));
+        Storage::disk(config('activity-log.file_storage_disk'))->put($path, Encryption::encrypt($content));
 
         return $path;
     }
 
     public function readEncrypted(string $path): ?string
     {
-        if (!Storage::exists($path)) {
+        if (!Storage::disk(config('activity-log.file_storage_disk'))->exists($path)) {
             return null;
         }
 
-        return Encryption::decrypt(Storage::get($path));
+        return Encryption::decrypt(Storage::disk(config('activity-log.file_storage_disk'))->get($path));
     }
 
     public function deleteEncrypted(string $path): bool
     {
-        if (Storage::exists($path)) {
-            return Storage::delete($path);
+        if (Storage::disk(config('activity-log.file_storage_disk'))->exists($path)) {
+            return Storage::disk(config('activity-log.file_storage_disk'))->delete($path);
         }
+
         return false;
     }
 }
