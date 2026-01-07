@@ -15,7 +15,8 @@ class FileStorageService implements FileStorageServiceInterface
 {
     public function storeEncrypted(string $content, string $fileName): string
     {
-        $path = "activity-log/{$fileName}.log";
+        $date = now()->format('Y-m-d');
+        $path = "activity-log/{$date}/{$fileName}.log";
 
         Storage::disk(config('activity-log.file_storage_disk'))->put($path, Encryption::encrypt($content));
 
