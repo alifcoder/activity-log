@@ -17,7 +17,7 @@ A simple, customizable Laravel package to log and store user activity across you
 ## 📦 Requirements
 
 - **PHP** `>=8.2`
-- **Laravel** `^11.0 || ^12.0`
+- **Laravel** `^11.0 || ^12.0 || ^13.0`
 
 ---
 
