@@ -21,6 +21,10 @@ class ActivityLogService implements ActivityLogServiceInterface
 {
     public function log(ActivityLogCreateDTO $dto): void
     {
+        if (!config('activity-log.enabled', true)) {
+            return;
+        }
+
         // check if the activity log should be stored in the queue
         if (config('activity-log.use_queue', true)) {
             StoreActivityLogJob::dispatch($dto)->onQueue(config('activity-log.queue_name', 'default'));
@@ -32,6 +36,10 @@ class ActivityLogService implements ActivityLogServiceInterface
 
     public function updateOrCreate(ActivityLogCreateDTO $dto): void
     {
+        if (!config('activity-log.enabled', true)) {
+            return;
+        }
+
         if (is_array($dto->request_body) && empty($dto->request_body)) {
             $dto->request_body = null;
         }
