@@ -18,6 +18,10 @@ trait ActivityLogTrait
     {
         // log model creation
         static::created(function ($model) {
+            if (!config('activity-log.enabled', true)) {
+                return;
+            }
+
             $request = request();
             $additionalId = $request->attributes->get('activity_log_id');
             // check request is valid
@@ -44,6 +48,10 @@ trait ActivityLogTrait
 
         // log model update
         static::saving(function ($model) {
+            if (!config('activity-log.enabled', true)) {
+                return;
+            }
+
             if (!$model->id){
                 return;
             }
@@ -73,6 +81,10 @@ trait ActivityLogTrait
         });
 
         static::deleting(function ($model) {
+            if (!config('activity-log.enabled', true)) {
+                return;
+            }
+
             $request = request();
             $additionalId = $request->attributes->get('activity_log_id');
             if (!$additionalId) {

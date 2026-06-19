@@ -19,6 +19,10 @@ class HttpMacro
         Http::macro('loggable', function (string $log_type = 'http', string $description = 'Http log') {
             return Http::withMiddleware(function (callable $handler) use ($log_type, $description) {
                 return function (RequestInterface $request, array $options) use ($handler, $log_type, $description) {
+                    if (!config('activity-log.enabled', true)) {
+                        return $handler($request, $options);
+                    }
+
                     // Start timing
                     $start_time = microtime(true);
 

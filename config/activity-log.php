@@ -6,6 +6,8 @@
  */
 
 return [
+        'enabled' => env('ACTIVITY_LOG_ENABLED', true),
+
         'db_connection' => env('ACTIVITY_LOG_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
 
         'use_queue'  => true,

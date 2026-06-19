@@ -17,6 +17,10 @@ class LogActivity
 {
     public function handle(Request $request, Closure $next)
     {
+        if (!config('activity-log.enabled', true)) {
+            return $next($request);
+        }
+
         // generate a unique request ID
         $request_id = (string)\Str::uuid();
         // set the request ID in the request attributes
