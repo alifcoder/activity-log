@@ -111,10 +111,10 @@ The package supports collecting additional information about user IP addresses, 
 - ASN
 - and more
 
-After installation, the package automatically registers a scheduled task:
+After installation, write scheduler code to sync IP details:
 
-```bash
-php artisan activity-log:sync-ip-details
+```php
+$schedule->command('activity-log:sync-ip-details')->hourly();
 ```
 ---
 

@@ -61,13 +61,5 @@ class ActivityLogServiceProvider extends ServiceProvider
 
         // Register global middleware
         $kernel->pushMiddleware(LogActivity::class);
-
-        // Schedule the IP details sync command
-        $this->app->booted(function () {
-            $schedule = app(\Illuminate\Console\Scheduling\Schedule::class);
-
-            // Run hourly
-            $schedule->command('activity-log:sync-ip-details')->hourly();
-        });
     }
 }
