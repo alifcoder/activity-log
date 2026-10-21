@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Shukhratjon Yuldashev on 2025-05-01
  * Contact: https://t.me/alif_coder
@@ -19,9 +20,7 @@ class StoreActivityLogJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(private readonly ActivityLogCreateDTO $dto)
-    {
-    }
+    public function __construct(private readonly ActivityLogCreateDTO $dto) {}
 
     public function handle(): void
     {
