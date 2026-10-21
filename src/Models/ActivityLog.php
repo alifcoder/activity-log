@@ -100,11 +100,6 @@ class ActivityLog extends Model
 
     public function user(): BelongsTo
     {
-        // getConnectionName() is pinned to the log connection, and Laravel passes that to related models,
-        // so belongsTo() would query users in the log DB. Build the query on the main connection instead.
-        $userModel = config('activity-log.models.user');
-        $user = (new $userModel)->setConnection(config('activity-log.main_connection'));
-
-        return new BelongsTo($user->newQuery(), $this, 'user_id', $user->getKeyName(), 'user');
+        return $this->setConnection(config('activity-log.main_connection'))->belongsTo(config('activity-log.models.user'), 'user_id');
     }
 }
