@@ -8,6 +8,7 @@
 
 namespace Alif\ActivityLog;
 
+use Alif\ActivityLog\Console\Commands\UninstallActivityLogCommand;
 use Alif\ActivityLog\Console\GenerateKeyCommand;
 use Alif\ActivityLog\Console\PruneActivityLogCommand;
 use Alif\ActivityLog\Console\SyncIpDetailsCommand;
@@ -35,6 +36,7 @@ class ActivityLogServiceProvider extends ServiceProvider
         // Register the console commands
         if ($this->app->runningInConsole()) {
             $this->commands([
+                UninstallActivityLogCommand::class,
                 SyncIpDetailsCommand::class,
                 GenerateKeyCommand::class,
                 PruneActivityLogCommand::class,

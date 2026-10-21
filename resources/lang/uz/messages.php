@@ -23,4 +23,11 @@ return [
     'logs_pruned' => ':count ta activity log o\'chirildi.',
     'files_removed' => 'Muddati o\'tgan sana papkalaridan :count ta fayl o\'chirildi.',
 
+    'uninstalled' => '✅  Activity Log paketi muvaffaqiyatli o\'chirildi.',
+    'config_removed' => '⚠️ config/activity-log.php o\'chirildi',
+    'migration_rolled_back' => '🔧 Anonim migratsiya orqaga qaytarildi: :path',
+    'migration_rollback_failed' => '❌ Anonim migratsiyani orqaga qaytarib bo\'lmadi: :message',
+    'migration_deleted' => '⚠️ Migratsiya o\'chirildi: :path',
+    'uninstall_confirm' => 'Bu activity_logs jadvalini o\'chiradi va paket migratsiyasini o\'chiradi. Davom etilsinmi?',
+    'uninstall_cancelled' => 'O\'chirish bekor qilindi.',
 ];

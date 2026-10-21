@@ -23,4 +23,11 @@ return [
     'logs_pruned' => 'Удалено записей Activity Log: :count.',
     'files_removed' => 'Удалено файлов из устаревших папок по дате: :count.',
 
+    'uninstalled' => '✅  Пакет Activity Log успешно удалён.',
+    'config_removed' => '⚠️ Удалён config/activity-log.php',
+    'migration_rolled_back' => '🔧 Анонимная миграция откачена: :path',
+    'migration_rollback_failed' => '❌ Не удалось откатить анонимную миграцию: :message',
+    'migration_deleted' => '⚠️ Удалена миграция: :path',
+    'uninstall_confirm' => 'Будет удалена таблица activity_logs и миграция пакета. Продолжить?',
+    'uninstall_cancelled' => 'Удаление отменено.',
 ];

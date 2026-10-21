@@ -6,6 +6,8 @@
  * Time: 2:52 PM
  */
 
+use App\Models\User;
+
 return [
     'enabled' => env('ACTIVITY_LOG_ENABLED', true),
 
@@ -16,7 +18,7 @@ return [
 
     'main_connection' => env('MAIN_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
     'models' => [
-        'user' => 'App\\Models\\User',
+        'user' => User::class,
     ],
     'file_storage_disk' => env('ACTIVITY_LOG_FILE_STORAGE_DISK', 'local'),
     'encrypt_key' => env('ACTIVITY_LOG_ENCRYPT_KEY'),
