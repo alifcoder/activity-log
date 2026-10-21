@@ -47,9 +47,6 @@ class LogActivity
         // get the current microtime for logging request-response time
         $start_time = microtime(true);
 
-        // file uploads and exports: only the metadata is logged, never the bodies
-        $skipBodies = $this->bodiesSkipped($request);
-
         // get response from the next middleware
         try {
             $response = $next($request);
@@ -62,7 +59,6 @@ class LogActivity
                 module_name: $module_name,
                 start_time: $start_time,
                 status_code: $this->statusOf($e),
-                skipBodies: $skipBodies,
             );
 
             throw $e;
@@ -75,8 +71,7 @@ class LogActivity
             module_name: $module_name,
             start_time: $start_time,
             status_code: $response->getStatusCode(),
-            response_body: $skipBodies ? null : $this->decodeJsonBody($response),
-            skipBodies: $skipBodies,
+            response_body: $this->decodeJsonBody($response),
         );
 
         // return the response
@@ -91,12 +86,11 @@ class LogActivity
         float $start_time,
         int $status_code,
         ?array $response_body = null,
-        bool $skipBodies = false,
     ): void {
         try {
             // get the request payload and curl command
-            $_payload = $skipBodies ? null : $this->requestPayload($request);
-            $_curl = $skipBodies ? null : ActivityLogger::curlOfRequest($request);
+            $_payload = $this->requestPayload($request);
+            $_curl = ActivityLogger::curlOfRequest($request);
 
             // calculate the time taken for the request-response cycle
             $end_time = microtime(true);
@@ -159,12 +153,6 @@ class LogActivity
         return is_string($content) ? LogBody::decodeJson($content) : null;
     }
 
-    /** Paths from `activity-log.skip_body_paths` (Str::is patterns) are logged without their bodies. */
-    private function bodiesSkipped(Request $request): bool
-    {
-        return $request->is(...(array) config('activity-log.skip_body_paths', []));
-    }
-
     private function requestPayload(Request $request): array
     {
         // multipart bodies are not read as raw content: the parsed fields and file metadata are logged
@@ -172,10 +160,6 @@ class LogActivity
             return ActivityLogger::getPayloadOfRequest($request);
         }
 
-        $content = (string) $request->getContent();
-
-        return LogBody::isOversized($content)
-                ? ['_truncated' => strlen($content)]
-                : ActivityLogger::getPayloadOfRequest($request);
+        return ActivityLogger::getPayloadOfRequest($request);
     }
 }

@@ -32,7 +32,7 @@ class ActivityLogCreateDTO
         public ?float $request_duration = null,
         public ?int $peak_memory_usage = null,
         public ?string $parent_id = null,
-        // bodies are redacted and encrypted once, before the DTO is queued; not a column
+        // bodies are encrypted once, before the DTO is queued; not a column
         public bool $prepared = false,
     ) {}
 

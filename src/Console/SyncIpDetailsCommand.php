@@ -36,10 +36,6 @@ class SyncIpDetailsCommand extends Command
                 ->whereNotNull('ip')
                 ->whereNotIn('ip', $this->exactIgnored());
 
-            foreach ($this->prefixIgnored() as $prefix) {
-                $query->where('ip', 'not like', $prefix . '%');
-            }
-
             $all = $query->select('ip')->distinct()->pluck('ip');
 
             // the ip may come from a forwarded header: only real addresses are ever put into a request url
@@ -116,10 +112,5 @@ class SyncIpDetailsCommand extends Command
     private function exactIgnored(): array
     {
         return array_values(array_unique(array_merge(['127.0.0.1', 'localhost'], config('activity-log.ip_ignore.exact', []))));
-    }
-
-    private function prefixIgnored(): array
-    {
-        return config('activity-log.ip_ignore.prefix', []);
     }
 }

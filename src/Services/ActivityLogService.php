@@ -13,7 +13,6 @@ use Alif\ActivityLog\Facades\FileStorage;
 use Alif\ActivityLog\Jobs\StoreActivityLogJob;
 use Alif\ActivityLog\Models\ActivityLog;
 use Alif\ActivityLog\Services\Interface\ActivityLogServiceInterface;
-use Alif\ActivityLog\Support\LogBody;
 use Illuminate\Http\Request as LaravelRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -32,7 +31,7 @@ class ActivityLogService implements ActivityLogServiceInterface
         try {
             // check if the activity log should be stored in the queue
             if (config('activity-log.use_queue', true)) {
-                // redact and encrypt before dispatch: the queue payload never carries plaintext bodies or secrets
+                // encrypt before dispatch: the queue payload never carries plaintext bodies
                 $this->prepare($dto);
 
                 StoreActivityLogJob::dispatch($dto)->onQueue(config('activity-log.queue_name', 'default'));
@@ -56,7 +55,7 @@ class ActivityLogService implements ActivityLogServiceInterface
     }
 
     /**
-     * Redacts and encrypts the DTO bodies, once. Runs before queueing; the queued job then skips it.
+     * Encrypts the DTO bodies, once. Runs before queueing; the queued job then skips it.
      */
     private function prepare(ActivityLogCreateDTO $dto): void
     {
@@ -75,14 +74,6 @@ class ActivityLogService implements ActivityLogServiceInterface
             $dto->response_body = null;
         }
 
-        if (is_array($dto->request_body)) {
-            $dto->request_body = $this->redact($dto->request_body);
-        }
-
-        if (is_array($dto->response_body)) {
-            $dto->response_body = $this->redact($dto->response_body);
-        }
-
         // file names derive from additional_id: a retried job overwrites its own files instead of leaving orphans
         $fileKey = sha1($dto->additional_id);
 
@@ -92,11 +83,6 @@ class ActivityLogService implements ActivityLogServiceInterface
 
         if ($dto->response_body !== null) {
             $dto->response_body = FileStorage::storeEncrypted($this->encodeBody($dto->response_body), 'response_' . $fileKey);
-        }
-
-        // the url may carry secrets in its query string
-        if ($dto->url) {
-            $dto->url = $this->redactUrl($dto->url);
         }
 
         if ($dto->curl) {
@@ -152,7 +138,7 @@ class ActivityLogService implements ActivityLogServiceInterface
         if ($request instanceof LaravelRequest) {
             // Handle Laravel incoming request
             $method = $request->method();
-            $url = $this->redactUrl($request->fullUrl());
+            $url = $request->fullUrl();
             $headers = $request->headers->all();
             $body = $request->getContent();
 
@@ -163,7 +149,7 @@ class ActivityLogService implements ActivityLogServiceInterface
         } else {
             // Handle Guzzle outgoing request
             $method = $request->getMethod();
-            $url = $this->redactUrl((string) $request->getUri());
+            $url = (string) $request->getUri();
             $headers = $request->getHeaders();
             $body = (string) $request->getBody();
         }
@@ -171,24 +157,13 @@ class ActivityLogService implements ActivityLogServiceInterface
         // Generate the curl command with headers and payload
         $curl = "curl -X {$method} '{$url}'";
 
-        $redactHeaders = array_map('strtolower', config('activity-log.redact_headers', []));
-
         foreach ($headers as $name => $values) {
             foreach ((array) $values as $value) {
-                if (in_array(strtolower($name), $redactHeaders, true)) {
-                    $value = '[REDACTED]';
-                }
-
                 $curl .= " -H '" . $name . ': ' . $value . "'";
             }
         }
 
         if (! empty($body)) {
-            // oversized bodies are not parsed, masked or stored; only their size is kept
-            $body = LogBody::isOversized($body)
-                    ? '[TRUNCATED: ' . strlen($body) . ' bytes]'
-                    : $this->redactBody($body, $contentType);
-
             // Escape single quotes only, since we wrap the body in single quotes
             $escapedBody = str_replace("'", "'\"'\"'", $body);
             $curl .= " --data '{$escapedBody}'";
@@ -222,79 +197,6 @@ class ActivityLogService implements ActivityLogServiceInterface
         }
 
         return $payload;
-    }
-
-    /**
-     * Mask sensitive values in a raw request body: JSON, or form-urlencoded
-     * (keeps the original encoding of untouched pairs). Other bodies are returned as-is.
-     */
-    private function redactBody(string $body, ?string $contentType): string
-    {
-        $decodedBody = json_decode($body, true);
-
-        if (is_array($decodedBody)) {
-            return json_encode($this->redact($decodedBody), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        }
-
-        if ($contentType && str_starts_with(strtolower($contentType), 'application/x-www-form-urlencoded')) {
-            return $this->redactPairs($body);
-        }
-
-        return $body;
-    }
-
-    /**
-     * Replace values of sensitive keys (case-insensitive, nested) with [REDACTED].
-     */
-    private function redact(array $data): array
-    {
-        $redactKeys = array_map('strtolower', config('activity-log.redact_keys', []));
-
-        foreach ($data as $key => $value) {
-            if (is_string($key) && in_array(strtolower($key), $redactKeys, true)) {
-                $data[$key] = '[REDACTED]';
-            } elseif (is_array($value)) {
-                $data[$key] = $this->redact($value);
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * Mask sensitive values of a url's query string. Fragment and path are kept.
-     */
-    private function redactUrl(string $url): string
-    {
-        $fragment = '';
-        if (($hash = strpos($url, '#')) !== false) {
-            $fragment = substr($url, $hash);
-            $url = substr($url, 0, $hash);
-        }
-
-        if (($question = strpos($url, '?')) === false) {
-            return $url . $fragment;
-        }
-
-        return substr($url, 0, $question + 1) . $this->redactPairs(substr($url, $question + 1)) . $fragment;
-    }
-
-    /**
-     * Mask values of sensitive keys in a raw "a=1&b=2" string, keeping the original encoding of other pairs.
-     * Nested keys such as user[password] are split into segments; any sensitive segment matches.
-     */
-    private function redactPairs(string $raw): string
-    {
-        $redactKeys = array_map('strtolower', config('activity-log.redact_keys', []));
-
-        return implode('&', array_map(function (string $pair) use ($redactKeys) {
-            [$key] = array_pad(explode('=', $pair, 2), 1, '');
-
-            preg_match_all('/[^\[\]]+/', urldecode($key), $segments);
-            $sensitive = array_intersect(array_map('strtolower', $segments[0]), $redactKeys);
-
-            return $sensitive ? "{$key}=%5BREDACTED%5D" : $pair;
-        }, explode('&', $raw)));
     }
 
     /**
