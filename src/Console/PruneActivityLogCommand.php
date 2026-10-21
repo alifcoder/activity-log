@@ -18,7 +18,7 @@ class PruneActivityLogCommand extends Command
 
     public function handle(): int
     {
-        $cutoff = now()->subDays((int) config('activity-log.log_keep_days', 30));
+        $cutoff = now()->subDays((int) config('activity-log.log_keep_days', 90));
         $disk = Storage::disk(config('activity-log.file_storage_disk'));
         $total = 0;
 
@@ -31,14 +31,15 @@ class PruneActivityLogCommand extends Command
                     ->values()
                     ->all();
 
+                // newer logs may still point at a parent that was just deleted: detach them instead of leaving dangling ids
+                ActivityLog::query()->whereIn('parent_id', $logs->modelKeys())->update(['parent_id' => null]);
+
+                // rows go first: if a file delete fails, the leftover file is only an orphan that the folder cleanup removes
+                ActivityLog::query()->whereKey($logs->modelKeys())->delete();
+
                 if ($paths !== []) {
                     $disk->delete($paths);
                 }
-
-                ActivityLog::query()->whereKey($logs->modelKeys())->delete();
-
-                // newer logs may still point at a parent that was just deleted: detach them instead of leaving dangling ids
-                ActivityLog::query()->whereIn('parent_id', $logs->modelKeys())->update(['parent_id' => null]);
 
                 $total += $logs->count();
             });

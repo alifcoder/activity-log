@@ -74,19 +74,20 @@ class ActivityLogService implements ActivityLogServiceInterface
             $dto->response_body = null;
         }
 
-        // file names derive from additional_id: a retried job overwrites its own files instead of leaving orphans
+        // file names and the date folder are fixed here: a retried job overwrites its own files instead of leaving orphans
         $fileKey = sha1($dto->additional_id);
+        $dto->stored_on ??= now()->format('Y-m-d');
 
         if ($dto->request_body !== null) {
-            $dto->request_body = FileStorage::storeEncrypted($this->encodeBody($dto->request_body), 'request_' . $fileKey);
+            $dto->request_body = FileStorage::storeEncrypted($this->encodeBody($dto->request_body), 'request_' . $fileKey, $dto->stored_on);
         }
 
         if ($dto->response_body !== null) {
-            $dto->response_body = FileStorage::storeEncrypted($this->encodeBody($dto->response_body), 'response_' . $fileKey);
+            $dto->response_body = FileStorage::storeEncrypted($this->encodeBody($dto->response_body), 'response_' . $fileKey, $dto->stored_on);
         }
 
         if ($dto->curl) {
-            $dto->curl = FileStorage::storeEncrypted($dto->curl, 'curl_' . $fileKey);
+            $dto->curl = FileStorage::storeEncrypted($dto->curl, 'curl_' . $fileKey, $dto->stored_on);
         }
 
         $dto->prepared = true;

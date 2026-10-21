@@ -11,8 +11,8 @@ return [
 
     'db_connection' => env('ACTIVITY_LOG_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
 
-    'use_queue' => true,
-    'queue_name' => 'default',
+    'use_queue' => env('ACTIVITY_LOG_USE_QUEUE', true),
+    'queue_name' => env('ACTIVITY_LOG_QUEUE_NAME', 'default'),
 
     'main_connection' => env('MAIN_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
     'models' => [
@@ -21,7 +21,7 @@ return [
     'file_storage_disk' => env('ACTIVITY_LOG_FILE_STORAGE_DISK', 'local'),
     'encrypt_key' => env('ACTIVITY_LOG_ENCRYPT_KEY'),
     'log_keep_days' => env('ACTIVITY_LOG_KEEP_DAYS', 90),
-    // request/response/curl bodies above this size are stored as a size marker only (bytes)
+
     'ip_ignore' => [
         // Full IPs
         'exact' => [

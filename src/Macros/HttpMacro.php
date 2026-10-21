@@ -11,6 +11,7 @@ namespace Alif\ActivityLog\Macros;
 use Alif\ActivityLog\DTO\ActivityLogCreateDTO;
 use Alif\ActivityLog\Facades\ActivityLogger;
 use Alif\ActivityLog\Support\LogBody;
+use GuzzleHttp\Exception\BadResponseException;
 use Illuminate\Support\Facades\Http;
 use Psr\Http\Message\RequestInterface;
 
@@ -74,7 +75,7 @@ class HttpMacro
                             // Create a DTO for the activity log
                             $dto = new ActivityLogCreateDTO(
                                 additional_id: $request_id,
-                                status_code: $response->getStatusCode(),
+                                status_code: (string) $response->getStatusCode(),
                                 response_body: $response_body,
                                 request_duration: $duration,
                                 peak_memory_usage: $memory,
@@ -83,6 +84,20 @@ class HttpMacro
                             ActivityLogger::log($dto);
 
                             return $response;
+                        },
+                        // failed calls (timeouts, connection errors) still end the row; the status is kept when the server answered
+                        function ($reason) use ($request_id, $start_time) {
+                            $response = $reason instanceof BadResponseException ? $reason->getResponse() : null;
+
+                            ActivityLogger::log(new ActivityLogCreateDTO(
+                                additional_id: $request_id,
+                                status_code: $response ? (string) $response->getStatusCode() : null,
+                                request_duration: (microtime(true) - $start_time) * 1000,
+                                peak_memory_usage: memory_get_peak_usage(true),
+                            ));
+
+                            // the caller still receives the original failure
+                            throw $reason;
                         },
                     );
                 };

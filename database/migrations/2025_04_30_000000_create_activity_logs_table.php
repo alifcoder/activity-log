@@ -14,15 +14,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::connection(config('activity-log.db_connection'))->create('activity_logs', function (Blueprint $table) {
+        $connection = config('activity-log.db_connection');
+
+        Schema::connection($connection)->create('activity_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('parent_id')->nullable()->index();
-            $table->string('additional_id')->nullable()->index();
+            // one row per request: the upsert in ActivityLogService relies on this unique index
+            $table->string('additional_id')->nullable()->unique();
             $table->string('log_type')->nullable()->index();
             $table->string('user_id')->nullable()->index();
             $table->string('module')->nullable()->index();
             $table->string('route', 500)->nullable()->index();
-            $table->text('url')->nullable()->index();
             $table->string('model_id')->nullable()->index();
             $table->string('model_type')->nullable()->index();
             $table->string('user_agent')->nullable()->index();
@@ -34,12 +36,17 @@ return new class extends Migration
             $table->string('request_body')->nullable();
             $table->string('response_body')->nullable();
             $table->string('curl')->nullable();
-            $table->text('description')->nullable()->index();
             $table->decimal('request_duration', 10, 3)->nullable()->index();
             $table->bigInteger('peak_memory_usage')->nullable()->index();
             $table->json('ip_details')->nullable();
+            $table->text('url')->nullable()->index();
+            $table->text('description')->nullable()->index();
             $table->timestamps();
+
+            $table->index('created_at');
+            $table->index(['model_id', 'created_at']);
         });
+
     }
 
     public function down(): void

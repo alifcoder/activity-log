@@ -12,7 +12,7 @@ use Alif\ActivityLog\Services\Interface\FileStorageServiceInterface;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @method static string storeEncrypted(string $content, string $fileName)
+ * @method static string storeEncrypted(string $content, string $fileName, ?string $date = null)
  * @method static string|null readEncrypted(string $path)
  * @method static bool deleteEncrypted(string $path)
  */

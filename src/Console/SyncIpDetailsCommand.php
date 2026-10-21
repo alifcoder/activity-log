@@ -38,9 +38,10 @@ class SyncIpDetailsCommand extends Command
 
             $all = $query->select('ip')->distinct()->pluck('ip');
 
-            // the ip may come from a forwarded header: only real addresses are ever put into a request url
-            $invalid = $all->reject(fn (string $ip) => filter_var($ip, FILTER_VALIDATE_IP) !== false);
-            $invalid->each(fn (string $ip) => ActivityLog::where('ip', $ip)->update(['ip_details' => json_encode(['success' => false])]));
+            // the ip may come from a forwarded header: only public addresses are ever put into a request url.
+            // private and reserved addresses are marked without a request, so they never leave the server
+            $invalid = $all->reject(fn (string $ip) => filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false);
+            $invalid->each(fn (string $ip) => $this->markInvalid($ip));
 
             $ips = $all->diff($invalid)->values();
 
@@ -50,8 +51,7 @@ class SyncIpDetailsCommand extends Command
                 return self::SUCCESS;
             }
 
-            $this->info(__('activity-log::messages.ip_found', ['count' => $ips->count()]) . '
-');
+            $this->info(__('activity-log::messages.ip_found', ['count' => $ips->count()]) . "\n");
 
             // requests run in parallel batches instead of one by one
             foreach ($ips->chunk(self::CHUNK_SIZE) as $index => $batch) {
@@ -94,19 +94,24 @@ class SyncIpDetailsCommand extends Command
 
         $data = $response->json();
 
-        // bad or private IP: store a marker so it is not requested again
+        // bad IP: store a marker so it is not requested again
         if (! ($data['success'] ?? true)) {
-            ActivityLog::where('ip', $ip)->update(['ip_details' => json_encode(['success' => false])]);
+            $this->markInvalid($ip);
             $this->warn(__('activity-log::messages.ip_invalid', ['ip' => $ip]));
 
             return;
         }
 
-        // Update all logs with this IP
-        ActivityLog::where('ip', $ip)->update(['ip_details' => json_encode($data)]);
+        // Update the logs of this IP that have no details yet
+        ActivityLog::where('ip', $ip)->whereNull('ip_details')->update(['ip_details' => json_encode($data)]);
 
-        $this->info(__('activity-log::messages.ip_updated', ['ip' => $ip]) . '
-');
+        $this->info(__('activity-log::messages.ip_updated', ['ip' => $ip]) . "\n");
+    }
+
+    // a marker stops the same bad IP from being requested again
+    private function markInvalid(string $ip): void
+    {
+        ActivityLog::where('ip', $ip)->whereNull('ip_details')->update(['ip_details' => json_encode(['success' => false])]);
     }
 
     private function exactIgnored(): array

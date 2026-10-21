@@ -10,7 +10,7 @@ namespace Alif\ActivityLog\Services\Interface;
 
 interface FileStorageServiceInterface
 {
-    public function storeEncrypted(string $content, string $fileName): string;
+    public function storeEncrypted(string $content, string $fileName, ?string $date = null): string;
 
     public function readEncrypted(string $path): ?string;
 

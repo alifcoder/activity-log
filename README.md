@@ -93,8 +93,6 @@ use Alif\ActivityLog\Facades\FileStorage;
 $content = FileStorage::readEncrypted($log->request_body);
 ```
 
-Sensitive values are masked **before** encryption. See [Redaction](#-redaction-of-sensitive-data).
-
 **Format.** New files use AES-256-GCM (authenticated) with a `v2:` prefix. Files written by older versions (AES-256-CBC, no prefix) are still read, so no data migration is needed. A tampered or wrongly keyed file raises an error, and `readEncrypted()` returns `null`.
 
 **Names.** Files are named after the `additional_id` (`request_<sha1>.log`, and so on). A retried job overwrites its own files, so it does not leave orphans behind.
@@ -130,8 +128,9 @@ $schedule->command('activity-log:sync-ip-details')->hourly();
 ```
 
 - Lookups run in parallel batches of 10.
-- IPs from `ip_ignore` (private and local addresses) are filtered in SQL, so they are never requested.
-- Each unique IP is requested once. Bad or private IPs get the marker `{"success": false}` in `ip_details`, so they are not requested again.
+- IPs from `ip_ignore.exact` (e.g. `127.0.0.1`, `::1`) are filtered in SQL, so they are never selected.
+- Private and reserved addresses (`10.x`, `192.168.x`, …) are marked with `{"success": false}` without any request, so they never leave the server.
+- Each unique public IP is requested once. Bad IPs get the same marker, so they are not requested again.
 - Failed requests (timeouts, connection errors) keep `ip_details` empty and are retried on the next run.
 ---
 
@@ -147,22 +146,6 @@ The command works in chunks (`--chunk=1000`): one DB delete and one file delete 
 
 ---
 
-## 📏 Body Size Limit
-
-Request, response and curl bodies larger than `max_body_bytes` (default 256 KB, `ACTIVITY_LOG_MAX_BODY_BYTES`) are not parsed, masked or encrypted. Only their size is stored, for example `{"_truncated": 2048000}`.
-
-This limit also bounds the queued job payload: a log job carries the bodies inline, so each job stays under the limit. Bodies are not uploaded before dispatch, because that would add storage latency to every logged request.
-
-## 🔒 Redaction of Sensitive Data
-
-Before request/response bodies are encrypted and curl commands are stored, sensitive values are replaced with `[REDACTED]`:
-
-- **Body keys** (`redact_keys`): matched case-insensitively at any nesting level, e.g. `password`, `token`, `api_key`.
-- **Headers** (`redact_headers`): applied to the stored curl command, e.g. `Authorization`, `Cookie`.
-- **JSON and form-urlencoded bodies** in the curl command are masked with the same `redact_keys`, including nested keys such as `user[password]`.
-
-Edit both lists in `config/activity-log.php`.
-
 ## 🛡️ Failure Behavior
 
 - Logging never breaks the request. Errors (missing key, queue or DB failure) are reported through Laravel's exception handler and the request continues.
@@ -174,7 +157,16 @@ Edit both lists in `config/activity-log.php`.
 
 Each `additional_id` maps to exactly one row. Writes are a single atomic `INSERT ... ON CONFLICT`, so the middleware row and the model rows of one request merge safely, even when several queue workers write at the same time. Manual logs without an `additional_id` get their own id and their own row.
 
-The unique index on `additional_id` is added by a migration. The migration refuses to run while rows share an `additional_id`, so such rows must be removed before it runs.
+The unique index on `additional_id` is part of the `activity_logs` migration, so fresh installs have it. Tables created by an older version need it added by hand, and only after their duplicates are removed:
+
+```sql
+-- 1. find the duplicates
+SELECT additional_id, COUNT(*) FROM activity_logs
+WHERE additional_id IS NOT NULL GROUP BY additional_id HAVING COUNT(*) > 1;
+
+-- 2. after merging or deleting them
+ALTER TABLE activity_logs ADD UNIQUE INDEX activity_logs_additional_id_unique (additional_id);
+```
 
 ## ⚡ Model Change Logging
 
@@ -210,7 +202,7 @@ Models using `ActivityLogTrait` are logged on create, delete, and on update **on
 | `created_at`         | DateTime  | When the log was created                                 |
 | `updated_at`         | DateTime  | When the log was last updated                            |
 
-Indexes: `additional_id` (UNIQUE), `parent_id`, `log_type`, `user_id`, `ip`, `created_at`, and the composite `(model_id, created_at)`. Only columns that queries filter on are indexed, because every index is updated on each insert.
+Indexes: every column except the encrypted file paths (`request_body`, `response_body`, `curl`) is indexed, because the ERP backend filters by the others. `additional_id` is UNIQUE, `created_at` has its own index, and `(model_id, created_at)` is composite.
 
 ---
 
@@ -224,25 +216,11 @@ Indexes: `additional_id` (UNIQUE), `parent_id`, `log_type`, `user_id`, `ip`, `cr
 | `ACTIVITY_LOG_QUEUE_NAME`         | `default`            | Queue name for log jobs                  |
 | `ACTIVITY_LOG_FILE_STORAGE_DISK`  | `local`              | Filesystem disk for encrypted files      |
 | `ACTIVITY_LOG_ENCRYPT_KEY`        | —                    | Encryption key (`activity-log:generate-key`) |
-| `ACTIVITY_LOG_KEEP_DAYS`          | `30`                 | Days to keep logs before pruning         |
-| `ACTIVITY_LOG_MAX_BODY_BYTES`     | `262144`            | Bodies above this size are stored as a size marker |
+| `ACTIVITY_LOG_KEEP_DAYS`          | `90`                 | Days to keep logs before pruning         |
 
 ---
 
-## 🧹 Uninstall (Clean Up)
-
-Run this command before removing the package:
-
-```bash
-php artisan activity-log:uninstall
-```
-
-It will:
-- Roll back the migration (calls `down()`)
-- Delete related migration files
-- Remove the config file
-
-Then remove the package:
+## 🧹 Remove Package
 
 ```bash
 composer remove alifcoder/activity-log

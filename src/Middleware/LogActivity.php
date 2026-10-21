@@ -156,10 +156,6 @@ class LogActivity
     private function requestPayload(Request $request): array
     {
         // multipart bodies are not read as raw content: the parsed fields and file metadata are logged
-        if (str_contains((string) $request->header('Content-Type'), 'multipart/form-data')) {
-            return ActivityLogger::getPayloadOfRequest($request);
-        }
-
         return ActivityLogger::getPayloadOfRequest($request);
     }
 }

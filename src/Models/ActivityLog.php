@@ -8,10 +8,8 @@
 
 namespace Alif\ActivityLog\Models;
 
-use Alif\ActivityLog\Facades\FileStorage;
 use Alif\ActivityLog\Traits\UUIDTrait;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
@@ -45,7 +43,7 @@ use Illuminate\Support\Carbon;
  */
 class ActivityLog extends Model
 {
-    use UUIDTrait, Prunable;
+    use UUIDTrait;
 
     protected $table = 'activity_logs';
 
@@ -60,31 +58,6 @@ class ActivityLog extends Model
     public function getConnectionName()
     {
         return config('activity-log.db_connection');
-    }
-
-    public function prunable()
-    {
-        $days = config('activity-log.log_keep_days', 30);
-
-        return static::where('created_at', '<', now()->subDays($days));
-    }
-
-    public function pruning()
-    {
-        // request file
-        if ($this->request_body) {
-            FileStorage::deleteEncrypted($this->request_body);
-        }
-
-        // response file
-        if ($this->response_body) {
-            FileStorage::deleteEncrypted($this->response_body);
-        }
-
-        // curl file
-        if ($this->curl) {
-            FileStorage::deleteEncrypted($this->curl);
-        }
     }
 
     // chain of log

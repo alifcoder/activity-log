@@ -34,12 +34,14 @@ class ActivityLogCreateDTO
         public ?string $parent_id = null,
         // bodies are encrypted once, before the DTO is queued; not a column
         public bool $prepared = false,
+        // date folder of the encrypted files, fixed on first preparation so a retry writes the same paths; not a column
+        public ?string $stored_on = null,
     ) {}
 
     public function toArray(): array
     {
         return collect(get_object_vars($this))
-            ->except(['prepared'])
+            ->except(['prepared', 'stored_on'])
             ->filter(fn ($value) => ! is_null($value))
             ->toArray();
     }

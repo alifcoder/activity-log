@@ -39,5 +39,10 @@
         "phpstan": "./vendor/bin/phpstan analyse --memory-limit=2G",
         "format": "@php vendor/bin/pint",
         "format:test": "@php vendor/bin/pint --test"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Alif\\ActivityLog\\Tests\\": "tests/"
+        }
     }
 }
