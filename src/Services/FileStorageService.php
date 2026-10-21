@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Sardorbek Abduqodirov on 17.11.2025
  * Contact: https://t.me/blackprince1605
@@ -9,6 +10,7 @@ namespace Alif\ActivityLog\Services;
 
 use Alif\ActivityLog\Facades\Encryption;
 use Alif\ActivityLog\Services\Interface\FileStorageServiceInterface;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Storage;
 
 class FileStorageService implements FileStorageServiceInterface
@@ -25,19 +27,20 @@ class FileStorageService implements FileStorageServiceInterface
 
     public function readEncrypted(string $path): ?string
     {
-        if (!Storage::disk(config('activity-log.file_storage_disk'))->exists($path)) {
+        try {
+            // one read: a missing file is reported by the filesystem, no separate exists() round-trip
+            return Encryption::decrypt(Storage::disk(config('activity-log.file_storage_disk'))->get($path));
+        } catch (FileNotFoundException) {
+            return null;
+        } catch (\Throwable $e) {
+            report($e);
+
             return null;
         }
-
-        return Encryption::decrypt(Storage::disk(config('activity-log.file_storage_disk'))->get($path));
     }
 
     public function deleteEncrypted(string $path): bool
     {
-        if (Storage::disk(config('activity-log.file_storage_disk'))->exists($path)) {
-            return Storage::disk(config('activity-log.file_storage_disk'))->delete($path);
-        }
-
-        return false;
+        return Storage::disk(config('activity-log.file_storage_disk'))->delete($path);
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Sardorbek Abduqodirov on 17.11.2025
  * Contact: https://t.me/blackprince1605
@@ -10,6 +11,10 @@ namespace Alif\ActivityLog\Facades;
 use Alif\ActivityLog\Services\Interface\EncryptionServiceInterface;
 use Illuminate\Support\Facades\Facade;
 
+/**
+ * @method static string encrypt(string $data)
+ * @method static string decrypt(string $encrypted)
+ */
 class Encryption extends Facade
 {
     protected static function getFacadeAccessor(): string

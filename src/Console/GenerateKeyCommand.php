@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Sardorbek Abduqodirov on 17.11.2025
  * Contact: https://t.me/blackprince1605
@@ -8,23 +9,31 @@
 namespace Alif\ActivityLog\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 
 class GenerateKeyCommand extends Command
 {
-    protected $signature = 'activity-log:generate-key';
+    protected $signature = 'activity-log:generate-key {--force : Replace an existing key}';
+
     protected $description = 'Generate a new encryption key for Activity Log';
 
-    public function handle()
+    public function handle(): int
     {
-        $key = "base64:".base64_encode(random_bytes(32));
-
         $envPath = base_path('.env');
 
-        if (!file_exists($envPath)) {
-            $this->error('.env file not found!');
+        if (! file_exists($envPath)) {
+            $this->error(__('activity-log::messages.env_file_not_found'));
+
             return self::FAILURE;
         }
+
+        // replacing a key makes every log encrypted with the old key unreadable
+        if (filled(config('activity-log.encrypt_key')) && ! $this->option('force')) {
+            $this->warn(__('activity-log::messages.key_already_set'));
+
+            return self::FAILURE;
+        }
+
+        $key = 'base64:' . base64_encode(random_bytes(32));
 
         // New env value
         $newLine = "ACTIVITY_LOG_ENCRYPT_KEY={$key}";
@@ -36,7 +45,7 @@ class GenerateKeyCommand extends Command
             $env = preg_replace(
                 '/ACTIVITY_LOG_ENCRYPT_KEY=.*/',
                 $newLine,
-                $env
+                $env,
             );
         } else {
             // Add new raw
@@ -45,8 +54,8 @@ class GenerateKeyCommand extends Command
 
         file_put_contents($envPath, $env);
 
-        $this->info("New Activity Log Encryption Key generated successfully!");
-        $this->info("KEY: {$key}");
+        // the key itself is written to .env only, never printed to console or CI logs
+        $this->info(__('activity-log::messages.key_generated'));
 
         return self::SUCCESS;
     }
