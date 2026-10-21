@@ -23,9 +23,6 @@ return [
     'logs_pruned' => 'Pruned :count activity log(s).',
     'files_removed' => 'Removed :count file(s) from expired date folders.',
 
-    'duplicates_found' => ':count duplicated additional_id group(s).',
-    'duplicates_merged' => 'Merged :count duplicated additional_id group(s).',
-
     'uninstalled' => '✅  Activity Log package uninstalled successfully.',
     'config_removed' => '⚠️ Removed config/activity-log.php',
     'migration_rolled_back' => '🔧 Rolled back anonymous migration in: :path',

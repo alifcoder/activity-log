@@ -23,9 +23,6 @@ return [
     'logs_pruned' => ':count ta activity log o\'chirildi.',
     'files_removed' => 'Muddati o\'tgan sana papkalaridan :count ta fayl o\'chirildi.',
 
-    'duplicates_found' => ':count ta takrorlangan additional_id guruhi.',
-    'duplicates_merged' => ':count ta takrorlangan additional_id guruhi birlashtirildi.',
-
     'uninstalled' => '✅  Activity Log paketi muvaffaqiyatli o\'chirildi.',
     'config_removed' => '⚠️ config/activity-log.php o\'chirildi',
     'migration_rolled_back' => '🔧 Anonim migratsiya orqaga qaytarildi: :path',

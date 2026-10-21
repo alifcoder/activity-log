@@ -174,14 +174,7 @@ Edit both lists in `config/activity-log.php`.
 
 Each `additional_id` maps to exactly one row. Writes are a single atomic `INSERT ... ON CONFLICT`, so the middleware row and the model rows of one request merge safely, even when several queue workers write at the same time. Manual logs without an `additional_id` get their own id and their own row.
 
-If your database has rows that share an `additional_id` (written before the unique index existed), merge them first:
-
-```bash
-php artisan activity-log:merge-duplicates --dry-run   # count only
-php artisan activity-log:merge-duplicates             # merge: keeps the oldest row, fills its empty fields, deletes the rest and their files
-```
-
-Then run the migration that adds the unique index on `additional_id`. The migration refuses to run while duplicates exist.
+The unique index on `additional_id` is added by a migration. The migration refuses to run while rows share an `additional_id`, so such rows must be removed before it runs.
 
 ## ⚡ Model Change Logging
 

@@ -10,7 +10,6 @@ namespace Alif\ActivityLog;
 
 use Alif\ActivityLog\Console\Commands\UninstallActivityLogCommand;
 use Alif\ActivityLog\Console\GenerateKeyCommand;
-use Alif\ActivityLog\Console\MergeDuplicateActivityLogsCommand;
 use Alif\ActivityLog\Console\PruneActivityLogCommand;
 use Alif\ActivityLog\Console\SyncIpDetailsCommand;
 use Alif\ActivityLog\Macros\HttpMacro;
@@ -41,7 +40,6 @@ class ActivityLogServiceProvider extends ServiceProvider
                 SyncIpDetailsCommand::class,
                 GenerateKeyCommand::class,
                 PruneActivityLogCommand::class,
-                MergeDuplicateActivityLogsCommand::class,
             ]);
         }
 
