@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Shukhratjon Yuldashev on 2025-04-30
  * Contact: https://t.me/alif_coder
@@ -13,19 +14,47 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string|null $parent_id
+ * @property string|null $additional_id
+ * @property string|null $log_type
+ * @property string|null $user_id
+ * @property string|null $module
+ * @property string|null $route
+ * @property string|null $url
+ * @property string|null $model_id
+ * @property string|null $model_type
+ * @property string|null $user_agent
+ * @property string|null $app_type
+ * @property string|null $app_version
+ * @property string|null $ip
+ * @property string|null $method
+ * @property string|null $status_code
+ * @property string|null $request_body
+ * @property string|null $response_body
+ * @property string|null $curl
+ * @property string|null $description
+ * @property float|null $request_duration
+ * @property int|null $peak_memory_usage
+ * @property array<string, mixed>|null $ip_details
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class ActivityLog extends Model
 {
     use UUIDTrait, Prunable;
 
     protected $table = 'activity_logs';
 
-    protected $guarded = false;
+    protected $guarded = [];
 
     protected $casts = [
-        'request_body'  => 'string',
+        'request_body' => 'string',
         'response_body' => 'string',
-        'curl'          => 'string',
+        'curl' => 'string',
     ];
 
     public function getConnectionName()
@@ -71,6 +100,11 @@ class ActivityLog extends Model
 
     public function user(): BelongsTo
     {
-        return $this->setConnection(config('activity-log.main_connection'))->belongsTo(config('activity-log.models.user'), 'user_id');
+        // getConnectionName() is pinned to the log connection, and Laravel passes that to related models,
+        // so belongsTo() would query users in the log DB. Build the query on the main connection instead.
+        $userModel = config('activity-log.models.user');
+        $user = (new $userModel)->setConnection(config('activity-log.main_connection'));
+
+        return new BelongsTo($user->newQuery(), $this, 'user_id', $user->getKeyName(), 'user');
     }
 }
