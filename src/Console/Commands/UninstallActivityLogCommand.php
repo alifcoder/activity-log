@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Shukhratjon Yuldashev on 2025-05-05
  * Contact: https://t.me/alif_coder
@@ -23,7 +24,7 @@ class UninstallActivityLogCommand extends Command
         // Delete published migrations
         $this->rollbackMigrations();
 
-        $this->info('✅  Activity Log package uninstalled successfully.');
+        $this->info(__('activity-log::messages.uninstalled'));
     }
 
     public function rollbackConfig(): void
@@ -32,14 +33,14 @@ class UninstallActivityLogCommand extends Command
         $configPath = config_path('activity-log.php');
         if (file_exists($configPath)) {
             unlink($configPath);
-            $this->info('⚠️ Removed config/activity-log.php');
+            $this->info(__('activity-log::messages.config_removed'));
         }
     }
 
     public function rollbackMigrations(): void
     {
         $migrations = collect(glob(database_path('migrations/*activity_log*.php')))
-                ->sortDesc(); // Sort by newest first
+            ->sortDesc(); // Sort by newest first
 
         foreach ($migrations as $migrationPath) {
             $migrationInstance = require $migrationPath;
@@ -47,16 +48,16 @@ class UninstallActivityLogCommand extends Command
             if (method_exists($migrationInstance, 'down')) {
                 try {
                     $migrationInstance->down();
-                    $this->info("🔧 Rolled back anonymous migration in: {$migrationPath}");
+                    $this->info(__('activity-log::messages.migration_rolled_back', ['path' => $migrationPath]));
                 } catch (\Throwable $e) {
-                    $this->error("❌ Failed to rollback anonymous migration: {$e->getMessage()}");
+                    report($e);
+                    $this->error(__('activity-log::messages.migration_rollback_failed', ['message' => $e->getMessage()]));
                 }
             }
 
             // Delete the file after rollback
             unlink($migrationPath);
-            $this->info("⚠️ Deleted migration: {$migrationPath}");
+            $this->info(__('activity-log::messages.migration_deleted', ['path' => $migrationPath]));
         }
     }
-
 }
