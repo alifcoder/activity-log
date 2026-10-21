@@ -41,7 +41,8 @@ return new class extends Migration
             $table->json('ip_details')->nullable();
             $table->text('url')->nullable()->index();
             $table->text('description')->nullable()->index();
-            $table->timestamps();
+            // microseconds: queued events of the same second keep their order
+            $table->timestamps(6);
 
             $table->index('created_at');
             $table->index(['model_id', 'created_at']);

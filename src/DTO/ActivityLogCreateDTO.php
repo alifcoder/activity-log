@@ -32,6 +32,8 @@ class ActivityLogCreateDTO
         public ?float $request_duration = null,
         public ?int $peak_memory_usage = null,
         public ?string $parent_id = null,
+        // event time with microseconds, set when the event is logged; written on insert only
+        public ?string $created_at = null,
         // bodies are encrypted once, before the DTO is queued; not a column
         public bool $prepared = false,
         // date folder of the encrypted files, fixed on first preparation so a retry writes the same paths; not a column

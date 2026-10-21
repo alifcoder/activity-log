@@ -13,6 +13,7 @@ use Alif\ActivityLog\Facades\FileStorage;
 use Alif\ActivityLog\Jobs\StoreActivityLogJob;
 use Alif\ActivityLog\Models\ActivityLog;
 use Alif\ActivityLog\Services\Interface\ActivityLogServiceInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request as LaravelRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -76,6 +77,9 @@ class ActivityLogService implements ActivityLogServiceInterface
      */
     private function prepare(ActivityLogCreateDTO $dto): void
     {
+        // event time is fixed here, before queueing, so queued writes keep the order the events happened in
+        $dto->created_at ??= now()->format('Y-m-d H:i:s.u');
+
         if ($dto->prepared) {
             return;
         }
@@ -111,30 +115,70 @@ class ActivityLogService implements ActivityLogServiceInterface
     }
 
     /**
-     * Writes a prepared DTO: parent lookup and one atomic upsert.
+     * Writes a prepared DTO: parent link and one atomic upsert.
      */
     private function store(ActivityLogCreateDTO $dto): void
     {
+        $linked = $dto->model_id && $dto->model_type;
+
         // resolve the parent before the write, so parent_id is saved in the same statement
-        if ($dto->model_id && $dto->model_type) {
-            $dto->parent_id = ActivityLog::query()
-                ->where('model_id', $dto->model_id)
-                ->where('model_type', $dto->model_type)
-                ->where('additional_id', '!=', $dto->additional_id)
+        if ($linked) {
+            $dto->parent_id = $this->modelLogsQuery($dto)
+                ->where('created_at', '<', $dto->created_at)
                 ->latest('created_at')
                 ->value('id') ?? $dto->parent_id;
         }
 
         // one atomic INSERT ... ON CONFLICT by additional_id: concurrent writers for the same request cannot create duplicates.
         // Only attributes present in the DTO are overwritten on conflict, so the middleware and model writes merge.
+        // created_at is the event time and is only set on insert.
         $values = $dto->toArray();
         $now = now();
 
         ActivityLog::upsert(
-            [array_merge($values, ['id' => (string) Str::orderedUuid(), 'created_at' => $now, 'updated_at' => $now])],
+            [array_merge(['id' => (string) Str::orderedUuid(), 'created_at' => $now, 'updated_at' => $now], $values)],
             ['additional_id'],
-            [...array_diff(array_keys($values), ['additional_id']), 'updated_at'],
+            [...array_diff(array_keys($values), ['additional_id', 'created_at']), 'updated_at'],
         );
+
+        if ($linked) {
+            $this->relinkNextLog($dto);
+        }
+    }
+
+    /**
+     * A log written late may sit between an existing pair: the next event then has to point to it.
+     */
+    private function relinkNextLog(ActivityLogCreateDTO $dto): void
+    {
+        $id = ActivityLog::query()->where('additional_id', $dto->additional_id)->value('id');
+
+        $next = $this->modelLogsQuery($dto)
+            ->where('created_at', '>', $dto->created_at)
+            ->oldest('created_at')
+            ->first(['id', 'parent_id']);
+
+        if (! $next) {
+            return;
+        }
+
+        $repoint = $next->parent_id === null
+            || ActivityLog::query()->whereKey($next->parent_id)->where('created_at', '<', $dto->created_at)->exists();
+
+        if ($repoint) {
+            ActivityLog::query()->whereKey($next->id)->update(['parent_id' => $id]);
+        }
+    }
+
+    /**
+     * @return Builder<ActivityLog>
+     */
+    private function modelLogsQuery(ActivityLogCreateDTO $dto): Builder
+    {
+        return ActivityLog::query()
+            ->where('model_id', $dto->model_id)
+            ->where('model_type', $dto->model_type)
+            ->where('additional_id', '!=', $dto->additional_id);
     }
 
     public function curlOfRequest($request): ?string
