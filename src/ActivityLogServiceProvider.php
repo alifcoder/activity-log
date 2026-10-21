@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Shukhratjon Yuldashev on 2025-04-30
  * Contact: https://t.me/alif_coder
@@ -9,6 +10,8 @@ namespace Alif\ActivityLog;
 
 use Alif\ActivityLog\Console\Commands\UninstallActivityLogCommand;
 use Alif\ActivityLog\Console\GenerateKeyCommand;
+use Alif\ActivityLog\Console\MergeDuplicateActivityLogsCommand;
+use Alif\ActivityLog\Console\PruneActivityLogCommand;
 use Alif\ActivityLog\Console\SyncIpDetailsCommand;
 use Alif\ActivityLog\Macros\HttpMacro;
 use Alif\ActivityLog\Middleware\LogActivity;
@@ -18,7 +21,6 @@ use Alif\ActivityLog\Services\FileStorageService;
 use Alif\ActivityLog\Services\Interface\ActivityLogServiceInterface;
 use Alif\ActivityLog\Services\Interface\EncryptionServiceInterface;
 use Alif\ActivityLog\Services\Interface\FileStorageServiceInterface;
-use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
 
 class ActivityLogServiceProvider extends ServiceProvider
@@ -35,10 +37,12 @@ class ActivityLogServiceProvider extends ServiceProvider
         // Register the console commands
         if ($this->app->runningInConsole()) {
             $this->commands([
-                                    UninstallActivityLogCommand::class,
-                                    SyncIpDetailsCommand::class,
-                                    GenerateKeyCommand::class,
-                            ]);
+                UninstallActivityLogCommand::class,
+                SyncIpDetailsCommand::class,
+                GenerateKeyCommand::class,
+                PruneActivityLogCommand::class,
+                MergeDuplicateActivityLogsCommand::class,
+            ]);
         }
 
         // Register the service
@@ -47,19 +51,18 @@ class ActivityLogServiceProvider extends ServiceProvider
         $this->app->bind(FileStorageServiceInterface::class, FileStorageService::class);
     }
 
-    public function boot(Kernel $kernel): void
+    public function boot(): void
     {
         // Register the macro
         HttpMacro::register();
 
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'activity-log');
+
         // Allow publishing
         $this->publishes(
-                [
-                        (__DIR__ . '/../config/activity-log.php') => config_path('activity-log.php'),
-                        (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/2025_04_30_000000_create_activity_logs_table.php'),
-                ], 'activity-log');
-
-        // Register global middleware
-        $kernel->pushMiddleware(LogActivity::class);
+            [
+                (__DIR__ . '/../config/activity-log.php') => config_path('activity-log.php'),
+                (__DIR__ . '/../database/migrations/2025_04_30_000000_create_activity_logs_table.php') => database_path('migrations/2025_04_30_000000_create_activity_logs_table.php'),
+            ], 'activity-log');
     }
 }
