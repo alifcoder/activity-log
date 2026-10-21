@@ -28,4 +28,6 @@ return [
     'migration_rolled_back' => '🔧 Rolled back anonymous migration in: :path',
     'migration_rollback_failed' => '❌ Failed to rollback anonymous migration: :message',
     'migration_deleted' => '⚠️ Deleted migration: :path',
+    'uninstall_confirm' => 'This drops the activity_logs table and deletes the package migration. Continue?',
+    'uninstall_cancelled' => 'Uninstall cancelled.',
 ];

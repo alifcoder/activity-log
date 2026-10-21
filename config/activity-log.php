@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\User;
-
 /**
  * Created by Shukhratjon Yuldashev on 2025-04-30
  * Contact: https://t.me/alif_coder
@@ -18,7 +16,8 @@ return [
 
     'main_connection' => env('MAIN_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
     'models' => [
-        'user' => User::class,
+        // the host app's user model; override with ACTIVITY_LOG_USER_MODEL
+        'user' => env('ACTIVITY_LOG_USER_MODEL', 'App\\Models\\User'),
     ],
     'file_storage_disk' => env('ACTIVITY_LOG_FILE_STORAGE_DISK', 'local'),
     'encrypt_key' => env('ACTIVITY_LOG_ENCRYPT_KEY'),
@@ -64,9 +63,16 @@ return [
 
         // Prefixes (with star(*))
         'prefix' => [
-            '192.168.',
+            '127.',
             '10.',
-            '172.16.',
+            '192.168.',
+            // 172.16.0.0/12 (172.16.* - 172.31.*)
+            ...array_map(fn (int $second) => "172.{$second}.", range(16, 31)),
+            // IPv4 link-local, IPv6 unique local (fc00::/7) and link-local (fe80::/10)
+            '169.254.',
+            'fc',
+            'fd',
+            'fe80:',
         ],
     ],
 ];

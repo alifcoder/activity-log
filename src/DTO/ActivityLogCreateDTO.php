@@ -32,11 +32,14 @@ class ActivityLogCreateDTO
         public ?float $request_duration = null,
         public ?int $peak_memory_usage = null,
         public ?string $parent_id = null,
+        // bodies are redacted and encrypted once, before the DTO is queued; not a column
+        public bool $prepared = false,
     ) {}
 
     public function toArray(): array
     {
         return collect(get_object_vars($this))
+            ->except(['prepared'])
             ->filter(fn ($value) => ! is_null($value))
             ->toArray();
     }

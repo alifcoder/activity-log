@@ -32,6 +32,9 @@ class ActivityLogService implements ActivityLogServiceInterface
         try {
             // check if the activity log should be stored in the queue
             if (config('activity-log.use_queue', true)) {
+                // redact and encrypt before dispatch: the queue payload never carries plaintext bodies or secrets
+                $this->prepare($dto);
+
                 StoreActivityLogJob::dispatch($dto)->onQueue(config('activity-log.queue_name', 'default'));
             } else {
                 // Store the activity log immediately
@@ -45,6 +48,19 @@ class ActivityLogService implements ActivityLogServiceInterface
     public function updateOrCreate(ActivityLogCreateDTO $dto): void
     {
         if (! config('activity-log.enabled', true)) {
+            return;
+        }
+
+        $this->prepare($dto);
+        $this->store($dto);
+    }
+
+    /**
+     * Redacts and encrypts the DTO bodies, once. Runs before queueing; the queued job then skips it.
+     */
+    private function prepare(ActivityLogCreateDTO $dto): void
+    {
+        if ($dto->prepared) {
             return;
         }
 
@@ -87,6 +103,14 @@ class ActivityLogService implements ActivityLogServiceInterface
             $dto->curl = FileStorage::storeEncrypted($dto->curl, 'curl_' . $fileKey);
         }
 
+        $dto->prepared = true;
+    }
+
+    /**
+     * Writes a prepared DTO: parent lookup and one atomic upsert.
+     */
+    private function store(ActivityLogCreateDTO $dto): void
+    {
         // resolve the parent before the write, so parent_id is saved in the same statement
         if ($dto->model_id && $dto->model_type) {
             $dto->parent_id = ActivityLog::query()

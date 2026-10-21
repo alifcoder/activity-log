@@ -12,7 +12,11 @@ use Alif\ActivityLog\DTO\ActivityLogCreateDTO;
 use Alif\ActivityLog\Facades\ActivityLogger;
 use Alif\ActivityLog\Support\LogBody;
 use Closure;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -35,7 +39,10 @@ class LogActivity
         $route = Route::getCurrentRoute();
         $action_name = $route?->getActionName();
         // get the module name from the action name
-        $module_name = explode('\\', $action_name)[1] ?? null;
+        // modules live under Modules\<Name>\...; app controllers (App\Http\...) have no module
+        $module_name = $action_name !== null && str_starts_with($action_name, 'Modules\\')
+            ? explode('\\', $action_name)[1]
+            : null;
 
         // get the current microtime for logging request-response time
         $start_time = microtime(true);
@@ -54,7 +61,7 @@ class LogActivity
                 action_name: $action_name,
                 module_name: $module_name,
                 start_time: $start_time,
-                status_code: $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500,
+                status_code: $this->statusOf($e),
                 skipBodies: $skipBodies,
             );
 
@@ -126,6 +133,22 @@ class LogActivity
             // logging must never break the request
             report($e);
         }
+    }
+
+    /**
+     * The status the handler would answer with. Framework exceptions that are not HTTP exceptions
+     * still have one: logging them as 500 would misreport every 401/403/404/422.
+     */
+    private function statusOf(Throwable $e): int
+    {
+        return match (true) {
+            $e instanceof HttpExceptionInterface => $e->getStatusCode(),
+            $e instanceof ValidationException => $e->status,
+            $e instanceof AuthenticationException => 401,
+            $e instanceof AuthorizationException => 403,
+            $e instanceof ModelNotFoundException => 404,
+            default => 500,
+        };
     }
 
     private function decodeJsonBody(Response $response): ?array
