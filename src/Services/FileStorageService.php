@@ -10,8 +10,8 @@ namespace Alif\ActivityLog\Services;
 
 use Alif\ActivityLog\Facades\Encryption;
 use Alif\ActivityLog\Services\Interface\FileStorageServiceInterface;
+use Alif\ActivityLog\Support\StorageDisk;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
-use Illuminate\Support\Facades\Storage;
 
 class FileStorageService implements FileStorageServiceInterface
 {
@@ -20,7 +20,7 @@ class FileStorageService implements FileStorageServiceInterface
         $date ??= now()->format('Y-m-d');
         $path = "activity-log/{$date}/{$fileName}.log";
 
-        Storage::disk(config('activity-log.file_storage_disk'))->put($path, Encryption::encrypt($content));
+        StorageDisk::resolve()->put($path, Encryption::encrypt($content));
 
         return $path;
     }
@@ -29,7 +29,7 @@ class FileStorageService implements FileStorageServiceInterface
     {
         try {
             // one read: a missing file is reported by the filesystem, no separate exists() round-trip
-            return Encryption::decrypt(Storage::disk(config('activity-log.file_storage_disk'))->get($path));
+            return Encryption::decrypt(StorageDisk::resolve()->get($path));
         } catch (FileNotFoundException) {
             return null;
         } catch (\Throwable $e) {
@@ -41,6 +41,6 @@ class FileStorageService implements FileStorageServiceInterface
 
     public function deleteEncrypted(string $path): bool
     {
-        return Storage::disk(config('activity-log.file_storage_disk'))->delete($path);
+        return StorageDisk::resolve()->delete($path);
     }
 }

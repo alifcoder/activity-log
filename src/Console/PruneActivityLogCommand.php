@@ -3,8 +3,8 @@
 namespace Alif\ActivityLog\Console;
 
 use Alif\ActivityLog\Models\ActivityLog;
+use Alif\ActivityLog\Support\StorageDisk;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Bulk prune: one DB delete and one file delete per chunk instead of per row.
@@ -19,7 +19,7 @@ class PruneActivityLogCommand extends Command
     public function handle(): int
     {
         $cutoff = now()->subDays((int) config('activity-log.log_keep_days', 90));
-        $disk = Storage::disk(config('activity-log.file_storage_disk'));
+        $disk = StorageDisk::resolve();
         $total = 0;
 
         ActivityLog::query()

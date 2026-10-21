@@ -29,18 +29,35 @@ class ActivityLogService implements ActivityLogServiceInterface
 
         // logging must never break the application: report and continue
         try {
-            // check if the activity log should be stored in the queue
+            // encrypt before dispatch: the queue payload never carries plaintext bodies
             if (config('activity-log.use_queue', true)) {
-                // encrypt before dispatch: the queue payload never carries plaintext bodies
                 $this->prepare($dto);
 
-                StoreActivityLogJob::dispatch($dto)->onQueue(config('activity-log.queue_name', 'default'));
-            } else {
-                // Store the activity log immediately
-                $this->updateOrCreate($dto);
+                if ($this->dispatchToQueue($dto)) {
+                    return;
+                }
             }
+
+            // queue disabled or unavailable: store immediately (prepare() is skipped for a prepared DTO)
+            $this->updateOrCreate($dto);
         } catch (Throwable $e) {
             report($e);
+        }
+    }
+
+    /**
+     * Returns false when the job could not be dispatched, so the caller stores the log synchronously.
+     */
+    private function dispatchToQueue(ActivityLogCreateDTO $dto): bool
+    {
+        try {
+            StoreActivityLogJob::dispatch($dto)->onQueue(config('activity-log.queue_name', 'default'));
+
+            return true;
+        } catch (Throwable $e) {
+            report($e);
+
+            return false;
         }
     }
 
