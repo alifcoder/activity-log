@@ -29,6 +29,20 @@
         }
     ],
     "require-dev": {
-        "laravel/framework": "^11.44"
+        "laravel/framework": "^13.0",
+        "laravel/pint": "^1.29",
+        "phpstan/phpstan": "^2.1",
+        "larastan/larastan": "^3.0",
+        "orchestra/testbench": "^11.0"
+    },
+    "scripts": {
+        "phpstan": "./vendor/bin/phpstan analyse --memory-limit=2G",
+        "format": "@php vendor/bin/pint",
+        "format:test": "@php vendor/bin/pint --test"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Alif\\ActivityLog\\Tests\\": "tests/"
+        }
     }
 }

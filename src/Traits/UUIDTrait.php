@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Shukhratjon Yuldashev on 2025-05-01
  * Contact: https://t.me/alif_coder
@@ -22,8 +23,6 @@ trait UUIDTrait
 
     /**
      * Get the value indicating whether the IDs are incrementing.
-     *
-     * @return bool
      */
     public function getIncrementing(): bool
     {
@@ -32,8 +31,6 @@ trait UUIDTrait
 
     /**
      * Get the auto-incrementing key type.
-     *
-     * @return string
      */
     public function getKeyType(): string
     {

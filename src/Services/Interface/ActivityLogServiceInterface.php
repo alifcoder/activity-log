@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Shukhratjon Yuldashev on 2025-05-01
  * Contact: https://t.me/alif_coder

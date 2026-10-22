@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Sardorbek Abduqodirov on 17.11.2025
  * Contact: https://t.me/blackprince1605
@@ -9,17 +10,27 @@ namespace Alif\ActivityLog\Services;
 
 use Alif\ActivityLog\Services\Interface\EncryptionServiceInterface;
 
+/**
+ * Format v2 (written): "v2:" . base64(iv[12] . tag[16] . ciphertext), AES-256-GCM (authenticated).
+ * Format v1 (legacy, read only): base64(iv[16] . base64(AES-256-CBC ciphertext)).
+ */
 class EncryptionService implements EncryptionServiceInterface
 {
-    private ?string $key;
+    private const PREFIX = 'v2:';
+
+    private const GCM_IV_BYTES = 12;
+
+    private const GCM_TAG_BYTES = 16;
+
+    private string $key;
 
     public function __construct()
     {
         $raw = config('activity-log.encrypt_key');
 
-        if (!$raw) {
+        if (! $raw) {
             throw new \RuntimeException(
-                "Activity Log encryption key is missing. Please run: php artisan activity-log:generate-key"
+                __('activity-log::messages.encryption_key_missing'),
             );
         }
 
@@ -31,11 +42,11 @@ class EncryptionService implements EncryptionServiceInterface
         $decoded = base64_decode($raw, true);
 
         if ($decoded === false) {
-            throw new \Exception("Invalid encryption key format. Expected base64-encoded 32 bytes.");
+            throw new \RuntimeException(__('activity-log::messages.encryption_key_invalid_format'));
         }
 
         if (strlen($decoded) !== 32) {
-            throw new \RuntimeException("Invalid encryption key length. Expected 32 bytes.");
+            throw new \RuntimeException(__('activity-log::messages.encryption_key_invalid_length'));
         }
 
         $this->key = $decoded;
@@ -43,13 +54,49 @@ class EncryptionService implements EncryptionServiceInterface
 
     public function encrypt(string $data): string
     {
-        $iv = random_bytes(16);
-        $encrypted = openssl_encrypt($data, 'AES-256-CBC', $this->key, 0, $iv);
+        $iv = random_bytes(self::GCM_IV_BYTES);
+        $tag = '';
 
-        return base64_encode($iv . $encrypted);
+        $cipher = openssl_encrypt($data, 'aes-256-gcm', $this->key, OPENSSL_RAW_DATA, $iv, $tag, '', self::GCM_TAG_BYTES);
+
+        // a failed encryption must not be stored as an empty or partial body
+        if ($cipher === false) {
+            throw new \RuntimeException(__('activity-log::messages.encryption_failed'));
+        }
+
+        return self::PREFIX . base64_encode($iv . $tag . $cipher);
     }
 
     public function decrypt(string $encrypted): string
+    {
+        $plain = str_starts_with($encrypted, self::PREFIX)
+                ? $this->decryptGcm(substr($encrypted, strlen(self::PREFIX)))
+                : $this->decryptLegacyCbc($encrypted);
+
+        if ($plain === false) {
+            // wrong key, tampered or corrupted data: never return an empty string silently
+            throw new \RuntimeException(__('activity-log::messages.decryption_failed'));
+        }
+
+        return $plain;
+    }
+
+    private function decryptGcm(string $payload): string|false
+    {
+        $raw = base64_decode($payload, true);
+
+        if ($raw === false || strlen($raw) < self::GCM_IV_BYTES + self::GCM_TAG_BYTES) {
+            return false;
+        }
+
+        $iv = substr($raw, 0, self::GCM_IV_BYTES);
+        $tag = substr($raw, self::GCM_IV_BYTES, self::GCM_TAG_BYTES);
+        $cipher = substr($raw, self::GCM_IV_BYTES + self::GCM_TAG_BYTES);
+
+        return openssl_decrypt($cipher, 'aes-256-gcm', $this->key, OPENSSL_RAW_DATA, $iv, $tag);
+    }
+
+    private function decryptLegacyCbc(string $encrypted): string|false
     {
         $decoded = base64_decode($encrypted);
         $iv = substr($decoded, 0, 16);

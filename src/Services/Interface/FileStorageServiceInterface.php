@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Sardorbek Abduqodirov on 17.11.2025
  * Contact: https://t.me/blackprince1605
@@ -9,7 +10,7 @@ namespace Alif\ActivityLog\Services\Interface;
 
 interface FileStorageServiceInterface
 {
-    public function storeEncrypted(string $content, string $fileName): string;
+    public function storeEncrypted(string $content, string $fileName, ?string $date = null): string;
 
     public function readEncrypted(string $path): ?string;
 

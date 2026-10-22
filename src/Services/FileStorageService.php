@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Sardorbek Abduqodirov on 17.11.2025
  * Contact: https://t.me/blackprince1605
@@ -9,35 +10,37 @@ namespace Alif\ActivityLog\Services;
 
 use Alif\ActivityLog\Facades\Encryption;
 use Alif\ActivityLog\Services\Interface\FileStorageServiceInterface;
-use Illuminate\Support\Facades\Storage;
+use Alif\ActivityLog\Support\StorageDisk;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 class FileStorageService implements FileStorageServiceInterface
 {
-    public function storeEncrypted(string $content, string $fileName): string
+    public function storeEncrypted(string $content, string $fileName, ?string $date = null): string
     {
-        $date = now()->format('Y-m-d');
+        $date ??= now()->format('Y-m-d');
         $path = "activity-log/{$date}/{$fileName}.log";
 
-        Storage::disk(config('activity-log.file_storage_disk'))->put($path, Encryption::encrypt($content));
+        StorageDisk::resolve()->put($path, Encryption::encrypt($content));
 
         return $path;
     }
 
     public function readEncrypted(string $path): ?string
     {
-        if (!Storage::disk(config('activity-log.file_storage_disk'))->exists($path)) {
+        try {
+            // one read: a missing file is reported by the filesystem, no separate exists() round-trip
+            return Encryption::decrypt(StorageDisk::resolve()->get($path));
+        } catch (FileNotFoundException) {
+            return null;
+        } catch (\Throwable $e) {
+            report($e);
+
             return null;
         }
-
-        return Encryption::decrypt(Storage::disk(config('activity-log.file_storage_disk'))->get($path));
     }
 
     public function deleteEncrypted(string $path): bool
     {
-        if (Storage::disk(config('activity-log.file_storage_disk'))->exists($path)) {
-            return Storage::disk(config('activity-log.file_storage_disk'))->delete($path);
-        }
-
-        return false;
+        return StorageDisk::resolve()->delete($path);
     }
 }
