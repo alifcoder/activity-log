@@ -73,6 +73,14 @@ class ActivityLog extends Model
 
     public function user(): BelongsTo
     {
-        return $this->setConnection(config('activity-log.main_connection'))->belongsTo(config('activity-log.models.user'), 'user_id');
+        $related = config('activity-log.models.user');
+
+        return new BelongsTo(
+            $related::on(config('activity-log.main_connection')),
+            $this,
+            'user_id',
+            'id',
+            'user',
+        );
     }
 }
